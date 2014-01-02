@@ -1,4 +1,4 @@
-dustview
+DustView
 ========
 
-Server-side dust.js rendering library with Rhino 
+Server-Side Dust Rendering Support Library 
