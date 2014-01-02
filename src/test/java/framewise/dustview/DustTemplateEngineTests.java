@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
  *
  * @author chanwook
  */
-public class DustTemplateEngineTests {
+class DustTemplateEngineTests {
 
 	@Test
 	public void findDustJsFile() throws Exception {
@@ -79,12 +79,5 @@ public class DustTemplateEngineTests {
 	@Test
 	public void thrownExceptionAtUncorrenctPath() throws Exception {
 		// TODO ..
-	}
-
-	static class TestDustTemplateEngine extends DustTemplateEngine {
-		@Override
-		protected void loadDustJsEngine(InputStream dustJsStream, InputStream dustHelperJsStream) {
-			super.loadDustJsEngine(dustJsStream, dustHelperJsStream);
-		}
 	}
 }

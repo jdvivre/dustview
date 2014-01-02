@@ -16,20 +16,22 @@ import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 /**
+ * This class is support to rendering with dust.js on server-side.
  *
+ * @author chanwook
  */
 public class SimpleDustTemplateView extends JstlView {
 
     private final Logger logger = LoggerFactory.getLogger(SimpleDustTemplateView.class);
 
-    public static final String DEFAULT_VIEW_ENCODING = "UTF-8";
-    public static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
-    public static final String VIEW_PATH = "_VIEW_PATH";
-    public static final String DATA_KEY = "_DATA_KEY";
-    public static final String VIEW_SOURCE = "_view";
-    public static final String TEMPLATE_LOADER = "_TEMPLATE_LOADER";
-    public static final String VIEW_PATH_PREFIX = "_VIEW_PATH_PREFIX";
-    public static final String VIEW_PATH_SUFFIX = "_VIEW_PATH_SUFFIX";
+    private static final String DEFAULT_VIEW_ENCODING = "UTF-8";
+    private static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
+    private static final String VIEW_PATH = "_VIEW_PATH";
+    private static final String DATA_KEY = "_DATA_KEY";
+    private static final String VIEW_SOURCE = "_view";
+    private static final String TEMPLATE_LOADER = "_TEMPLATE_LOADER";
+    private static final String VIEW_PATH_PREFIX = "_VIEW_PATH_PREFIX";
+    private static final String VIEW_PATH_SUFFIX = "_VIEW_PATH_SUFFIX";
 
     private ObjectMapper jsonMapper = new ObjectMapper();
     private DustTemplateEngine dustEngine = new DustTemplateEngine();
@@ -57,7 +59,7 @@ public class SimpleDustTemplateView extends JstlView {
 
         Map<String, Object> mergedOutputModel = super.createMergedOutputModel(model, request, res);
 
-        initViewAttribute(mergedOutputModel);
+        initViewAttribute();
 
         // Compose Variable for Dust View
         String templateKey = getDustTemplateKey(mergedOutputModel);
@@ -97,7 +99,7 @@ public class SimpleDustTemplateView extends JstlView {
         return mergedOutputModel;
     }
 
-    protected void initViewAttribute(Map<String, Object> mergedOutputModel) {
+    protected void initViewAttribute() {
         if (viewTemplateLoader == null && getAttributesMap().get(TEMPLATE_LOADER) != null && getAttributesMap().get(TEMPLATE_LOADER) instanceof DustViewTemplateLoader) {
             setViewTemplateLoader((DustViewTemplateLoader) getAttributesMap().get(TEMPLATE_LOADER));
         }
@@ -118,35 +120,29 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected String createView(StringWriter writer) {
-        String responseHtml = "";
+
         try {
-            responseHtml = new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
+            return new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
         } catch (UnsupportedEncodingException e) {
             throw new DustViewException("Fail to create View Source", e);
         }
 
-        return responseHtml;
     }
 
     protected String loadViewTemplateSource(String viewFile) {
-        String template = viewTemplateLoader.loadFile(viewFile);
-        return template;
+        return viewTemplateLoader.loadFile(viewFile);
     }
 
     protected String createJsonObject(Object jsonData) {
-        String json = "";
         try {
-            json = getJsonMapper().writeValueAsString(jsonData);
+            return getJsonMapper().writeValueAsString(jsonData);
         } catch (JsonProcessingException e) {
             throw new DustViewException("Fail to create JSON Object[message: " + e.getMessage() + "]", e);
         }
-
-        return json;
     }
 
     protected Object getJsonData(Map<String, ?> model) {
-        Object data = model.get(DATA_KEY);
-        return data;
+        return model.get(DATA_KEY);
     }
 
     protected String getDustViewPath(Map<String, ?> model) {
@@ -163,7 +159,7 @@ public class SimpleDustTemplateView extends JstlView {
         if (templateKey != null && templateKey instanceof String) {
             return (String) templateKey;
         } else if (templateKey != null && !(templateKey instanceof String)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Template key must be java.lang.String!");
         } else {
             return null;
         }

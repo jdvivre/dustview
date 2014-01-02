@@ -1,11 +1,10 @@
 package framewise.dustview;
 
 /**
- * Created with IntelliJ IDEA.
- * User: chanwook
- * Date: 2013. 12. 8.
- * Time: 오후 3:47
- * To change this template use File | Settings | File Templates.
+ *
+ * This interface is defined to loading template file, HTML.
+ *
+ * @author chanwook
  */
 public interface DustViewTemplateLoader {
 

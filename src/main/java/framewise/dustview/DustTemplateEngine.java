@@ -18,21 +18,21 @@ import java.io.Writer;
  */
 public class DustTemplateEngine {
 
-    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public static final String DEFAULT_COMPILE_SOURCE_NAME = "ServerSideDustCompiler";
-    public static final String DEFAULT_DUST_JS_FILE_PATH = "/dust/dust-full-1.1.1.js";
-    public static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.0.js";
-    public static final String DEFAULT_COMPILE_SCRIPT = "(dust.compile(source, templateKey))";
-    public static final String DEFAULT_LOAD_SCRIPT = "(dust.loadSource(compiledSource))";
-    public static final String DEFAULT_RENDER_SCRIPT = (
+    private static final String DEFAULT_COMPILE_SOURCE_NAME = "ServerSideDustCompiler";
+    private static final String DEFAULT_DUST_JS_FILE_PATH = "/dust/dust-full-1.1.1.js";
+    private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.0.js";
+    private static final String DEFAULT_COMPILE_SCRIPT = "(dust.compile(source, templateKey))";
+    private static final String DEFAULT_LOAD_SCRIPT = "(dust.loadSource(compiledSource))";
+    private static final String DEFAULT_RENDER_SCRIPT = (
             "{   dust.render( templateKey, JSON.parse(json), "
                     + "function(error, data) { if(error) { writer.write(error);} else { writer.write( data );} } );}"
     );
 
-    public static final String DEFAULT_ENCODING = "UTF-8";
+    private static final String DEFAULT_ENCODING = "UTF-8";
 
-    public static Scriptable globalScope;
+    private static Scriptable globalScope;
 
     private String compileSourceName = DEFAULT_COMPILE_SOURCE_NAME;
     private String dustJsFilePath = DEFAULT_DUST_JS_FILE_PATH;
@@ -41,9 +41,6 @@ public class DustTemplateEngine {
     private String compileScript = DEFAULT_COMPILE_SCRIPT;
     private String loadScript = DEFAULT_LOAD_SCRIPT;
     private String renderScript = DEFAULT_RENDER_SCRIPT;
-
-    public DustTemplateEngine() {
-    }
 
     /**
      * dust context initialize method. must call before running dust
@@ -54,6 +51,7 @@ public class DustTemplateEngine {
 
         loadDustJsEngine(dustJsStream, dustHelperJsStream);
     }
+
 
     /**
      * Initialize Dust JS Context

@@ -6,16 +6,19 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 
 /**
- * Created with IntelliJ IDEA.
- * User: chanwook
- * Date: 2013. 12. 8.
- * Time: 오후 4:12
- * To change this template use File | Settings | File Templates.
+ * This class support to loading template file where is local file system.
+ *
+ * @author chanwook
  */
 public class LocalDustViewTemplateLoader implements DustViewTemplateLoader {
     @Override
     public String loadFile(String viewFile) {
         ClassPathResource fileResource = new ClassPathResource(viewFile);
+
+        if (fileResource == null) {
+            throw new DustViewException("Template File Not Found in local system!!");
+        }
+
         byte[] bytes = null;
         try {
             bytes = new byte[(int) fileResource.contentLength()];
