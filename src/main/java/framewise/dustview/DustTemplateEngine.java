@@ -42,6 +42,10 @@ public class DustTemplateEngine {
     private String loadScript = DEFAULT_LOAD_SCRIPT;
     private String renderScript = DEFAULT_RENDER_SCRIPT;
 
+    public DustTemplateEngine() {
+        initializeContext();
+    }
+
     /**
      * dust context initialize method. must call before running dust
      */
