@@ -5,7 +5,6 @@ Server-Side Dust Rendering Support Library
 
 # Using DustTemplateEigine
 
-        '''java
         DustTemplateEngine engine = new DustTemplateEngine();
         
         // Compile Template
@@ -25,8 +24,8 @@ Server-Side Dust Rendering Support Library
 
 # Using DustTemplateView for Spring framework
 
-        
-        // Java Configuration
+## Java Configuration
+   
         @Configuration
         @EnableWebMvc
         @ComponentScan(basePackages = {"packageName"}, useDefaultFilters = false,
@@ -52,5 +51,4 @@ Server-Side Dust Rendering Support Library
         
         }
 
-
-        <!-- XML Configuration -->
+## XML Configuration
