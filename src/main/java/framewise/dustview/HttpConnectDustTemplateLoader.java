@@ -13,7 +13,7 @@ import java.nio.charset.Charset;
  *
  * @author chanwook
  */
-public class HttpConnectDustViewTemplateLoader implements DustViewTemplateLoader {
+public class HttpConnectDustTemplateLoader implements DustTemplateLoader {
 
     private static final String DEFAULT_FROM_ENCODING = "ISO-8859-1";
     private static final String DEFAULT_TO_ENCODING = "UTF-8";
@@ -32,12 +32,12 @@ public class HttpConnectDustViewTemplateLoader implements DustViewTemplateLoader
     }
 
     @Override
-    public String loadFile(String viewFile) {
+    public String loadTemplate(String templatePath) {
 
-        if (viewFile.startsWith("http://")) {
+        if (templatePath.startsWith("http://")) {
             try {
                 ResponseEntity<String> responseEntity =
-                        restTemplate.exchange(viewFile, HttpMethod.GET, new HttpEntity<String>(
+                        restTemplate.exchange(templatePath, HttpMethod.GET, new HttpEntity<String>(
                                 new HttpHeaders()), String.class);
                 String rawTemplate = responseEntity.getBody();
                 return new String(rawTemplate.getBytes(Charset.forName(fromEncoding)), toEncoding);

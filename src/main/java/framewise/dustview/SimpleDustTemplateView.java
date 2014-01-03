@@ -36,7 +36,7 @@ public class SimpleDustTemplateView extends JstlView {
     private ObjectMapper jsonMapper = new ObjectMapper();
     private DustTemplateEngine dustEngine = new DustTemplateEngine();
 
-    private DustViewTemplateLoader viewTemplateLoader;
+    private DustTemplateLoader viewTemplateLoader;
 
     private String viewEncoding = DEFAULT_VIEW_ENCODING;
     private String viewPrefixPath = "";
@@ -100,8 +100,8 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected void initViewAttribute() {
-        if (viewTemplateLoader == null && getAttributesMap().get(TEMPLATE_LOADER) != null && getAttributesMap().get(TEMPLATE_LOADER) instanceof DustViewTemplateLoader) {
-            setViewTemplateLoader((DustViewTemplateLoader) getAttributesMap().get(TEMPLATE_LOADER));
+        if (viewTemplateLoader == null && getAttributesMap().get(TEMPLATE_LOADER) != null && getAttributesMap().get(TEMPLATE_LOADER) instanceof DustTemplateLoader) {
+            setViewTemplateLoader((DustTemplateLoader) getAttributesMap().get(TEMPLATE_LOADER));
         }
 
         if (!StringUtils.hasText(viewPrefixPath) && getAttributesMap().get(VIEW_PATH_PREFIX) != null && getAttributesMap().get(VIEW_PATH_PREFIX) instanceof String) {
@@ -130,7 +130,7 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected String loadViewTemplateSource(String viewFile) {
-        return viewTemplateLoader.loadFile(viewFile);
+        return viewTemplateLoader.loadTemplate(viewFile);
     }
 
     protected String createJsonObject(Object jsonData) {
@@ -194,11 +194,11 @@ public class SimpleDustTemplateView extends JstlView {
         return dustEngine;
     }
 
-    public DustViewTemplateLoader getViewTemplateLoader() {
+    public DustTemplateLoader getViewTemplateLoader() {
         return viewTemplateLoader;
     }
 
-    public void setViewTemplateLoader(DustViewTemplateLoader viewTemplateLoader) {
+    public void setViewTemplateLoader(DustTemplateLoader viewTemplateLoader) {
         this.viewTemplateLoader = viewTemplateLoader;
     }
 

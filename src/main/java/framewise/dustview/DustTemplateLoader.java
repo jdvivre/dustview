@@ -6,15 +6,15 @@ package framewise.dustview;
  *
  * @author chanwook
  */
-public interface DustViewTemplateLoader {
+public interface DustTemplateLoader {
 
     /**
      * Load Dust Template File.
      * This method is implemented by loading methodologies.
      *
-     * @param viewFile
+     * @param templatePath
      * @return
      */
-    String loadFile(String viewFile);
+    String loadTemplate(String templatePath);
 
 }
