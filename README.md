@@ -55,8 +55,8 @@ Server-Side Dust Rendering Support Library
 
 
 ## Refresh cache to template source 
-DustTemplateView is cache view source for one time access to file. 
-If you want to refresh view source(maybe redeploy your view source(HTML)), you call server with specific parameter(_refresh). Parameter value is "y" or "Y" (case insensitive).
+DustTemplateView is cache template file source for one time access to file. 
+If you want to refresh template source(maybe redeploy your view source(dust compiled HTML)), you call server with specific parameter(_refresh). Parameter value is "y" or "Y" (case insensitive).
 
         http://...?_refresh=y&.. or
         http://...?_refresh=Y&..
