@@ -23,14 +23,6 @@ public class HttpConnectDustTemplateLoader implements DustTemplateLoader {
     private String fromEncoding = DEFAULT_FROM_ENCODING;
     private String toEncoding = DEFAULT_TO_ENCODING;
 
-    public void setFromEncoding(String fromEncoding) {
-        this.fromEncoding = fromEncoding;
-    }
-
-    public void setToEncoding(String toEncoding) {
-        this.toEncoding = toEncoding;
-    }
-
     @Override
     public String loadTemplate(String templatePath) {
 
@@ -51,5 +43,13 @@ public class HttpConnectDustTemplateLoader implements DustTemplateLoader {
 
     public void setRestTemplate(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
+    }
+
+    public void setFromEncoding(String fromEncoding) {
+        this.fromEncoding = fromEncoding;
+    }
+
+    public void setToEncoding(String toEncoding) {
+        this.toEncoding = toEncoding;
     }
 }

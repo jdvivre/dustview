@@ -3,12 +3,11 @@ package framewise.dustview;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author chanwook
  */
-public class FileSystemDustTemplateLoaderTests {
+public class FileSystemDustTemplateLoaderTest {
 
     FileSystemDustTemplateLoader l = new FileSystemDustTemplateLoader();
 

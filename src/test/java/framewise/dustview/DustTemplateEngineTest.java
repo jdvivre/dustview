@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
  *
  * @author chanwook
  */
-public class DustTemplateEngineTests {
+public class DustTemplateEngineTest {
 
 	@Test
 	public void findDustJsFile() throws Exception {

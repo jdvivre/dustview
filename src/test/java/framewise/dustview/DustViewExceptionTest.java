@@ -7,7 +7,7 @@ import static  org.hamcrest.CoreMatchers.*;
 /**
  * @author chanwook
  */
-public class DustViewExceptionTests {
+public class DustViewExceptionTest {
 
     @Test
     public void exceptionalInfo(){
