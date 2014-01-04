@@ -72,6 +72,7 @@ public class SimpleDustTemplateView extends JstlView {
         Object jsonData = getJsonData(mergedOutputModel);
         String json = createJsonObject(jsonData);
 
+        // load template source
         boolean isRefresh = getRefreshParam(request);
         String viewPath = getDustViewPath(mergedOutputModel);
         String templateSource = loadViewTemplateSource(viewPath, isRefresh);
