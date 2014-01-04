@@ -6,8 +6,9 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.HashMap;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 
 /**
@@ -79,7 +80,7 @@ public class SimpleDustTemplateViewTest {
                 return refreshSrc;
             }
         });
-        v.setViewSourceCacheProvider(new InMemoryViewSourceCacheProvider(){
+        v.setViewSourceCacheProvider(new InMemoryViewSourceCacheProvider() {
             @Override
             public void add(String viewPath, String templateSource) {
                 super.add(viewPath, cacheSrc);
@@ -100,6 +101,15 @@ public class SimpleDustTemplateViewTest {
         // cached src
         src = v.loadViewTemplateSource(viewPath, false);
         assertThat(src, is(cacheSrc));
+
+        // disable cache
+        v.setViewCacheable(false);
+        src = v.loadViewTemplateSource(viewPath, true);
+        assertThat(src, is(refreshSrc));
+
+        v.setViewCacheable(false);
+        src = v.loadViewTemplateSource(viewPath, false);
+        assertThat(src, is(refreshSrc));
     }
 
     static class MockTemplateLoader implements DustTemplateLoader {

@@ -42,6 +42,7 @@ public class SimpleDustTemplateView extends JstlView {
     private String viewPrefixPath = "";
     private String viewSuffixPath = "";
     private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
+    private boolean viewCacheable = true;
 
     /**
      * Default Constructor
@@ -142,11 +143,14 @@ public class SimpleDustTemplateView extends JstlView {
 
     protected String loadViewTemplateSource(String viewPath, boolean isRefresh) {
         String templateSource = "";
-        if (viewSourceCacheProvider.isCached(viewPath) && !isRefresh) {
+        if (viewCacheable && viewSourceCacheProvider.isCached(viewPath) && !isRefresh) {
             templateSource = viewSourceCacheProvider.get(viewPath);
         } else {
             templateSource = viewTemplateLoader.loadTemplate(viewPath);
-            viewSourceCacheProvider.add(viewPath, templateSource);
+
+            if (viewCacheable) {
+                viewSourceCacheProvider.add(viewPath, templateSource);
+            }
         }
         return templateSource;
     }
@@ -250,5 +254,13 @@ public class SimpleDustTemplateView extends JstlView {
 
     public String getViewSuffixPath() {
         return viewSuffixPath;
+    }
+
+    public boolean isViewCacheable() {
+        return viewCacheable;
+    }
+
+    public void setViewCacheable(boolean viewCacheable) {
+        this.viewCacheable = viewCacheable;
     }
 }
