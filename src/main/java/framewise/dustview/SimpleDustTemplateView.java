@@ -29,9 +29,9 @@ public class SimpleDustTemplateView extends JstlView {
     private static final String VIEW_PATH = "_VIEW_PATH";
     private static final String DATA_KEY = "_DATA_KEY";
     private static final String VIEW_SOURCE = "_view";
-    private static final String TEMPLATE_LOADER = "_TEMPLATE_LOADER";
-    private static final String VIEW_PATH_PREFIX = "_VIEW_PATH_PREFIX";
-    private static final String VIEW_PATH_SUFFIX = "_VIEW_PATH_SUFFIX";
+    static final String TEMPLATE_LOADER = "_TEMPLATE_LOADER";
+    static final String VIEW_PATH_PREFIX = "_VIEW_PATH_PREFIX";
+    static final String VIEW_PATH_SUFFIX = "_VIEW_PATH_SUFFIX";
 
     private ObjectMapper jsonMapper = new ObjectMapper();
     private DustTemplateEngine dustEngine = new DustTemplateEngine();
@@ -41,12 +41,13 @@ public class SimpleDustTemplateView extends JstlView {
     private String viewEncoding = DEFAULT_VIEW_ENCODING;
     private String viewPrefixPath = "";
     private String viewSuffixPath = "";
+    private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
 
     /**
      * Default Constructor
      */
     public SimpleDustTemplateView() {
-        dustEngine.initializeContext();
+
     }
 
     @Override
@@ -59,7 +60,7 @@ public class SimpleDustTemplateView extends JstlView {
 
         Map<String, Object> mergedOutputModel = super.createMergedOutputModel(model, request, res);
 
-        initViewAttribute();
+        createViewAttribute();
 
         // Compose Variable for Dust View
         String templateKey = getDustTemplateKey(mergedOutputModel);
@@ -67,31 +68,22 @@ public class SimpleDustTemplateView extends JstlView {
             return mergedOutputModel;
         }
 
-        Object jsonData = getJsonData(mergedOutputModel);
-
-        String viewFile = getDustViewPath(mergedOutputModel);
-
-        if (StringUtils.hasText(templateKey) && (jsonData == null || !StringUtils.hasText(viewFile))) {
-            throw new IllegalArgumentException("Insufficiently Argument to DustView. [templateKey: " + templateKey + ", jsonDataObject: " + jsonData + ", DustView File Path: " + viewFile + "]");
-        }
-
         // create JSON Object that used to model at Dust VIEW
+        Object jsonData = getJsonData(mergedOutputModel);
         String json = createJsonObject(jsonData);
 
-        String templateSource = loadViewTemplateSource(viewFile);
+        boolean isRefresh = getRefreshParam(request);
+        String viewPath = getDustViewPath(mergedOutputModel);
+        String templateSource = loadViewTemplateSource(viewPath, isRefresh);
 
-        // TODO add caches
-        StringWriter writer = new StringWriter();
         // Dust.js compile ~ rendering
-        getDustEngine().load(templateSource);
-        getDustEngine().render(writer, templateKey, json);
+        String viewSource = createViewSource(templateKey, json, templateSource);
 
-        String viewSource = createView(writer);
-
-        setResponseMoreInformation(res);
+        addResponseMoreInformation(res);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Dust View Rendering Result=> TemplateKey: " + templateKey + ", Template File: " + viewFile + ", JSON: " + json + ", View Source: " + viewSource);
+            logger.debug("Dust View Rendering Result = TemplateKey: " + templateKey + ", Template File Path: " + viewPath +
+                    ", JSON: " + json + ", View Source: " + viewSource);
         }
 
         mergedOutputModel.put(VIEW_SOURCE, viewSource);
@@ -99,7 +91,35 @@ public class SimpleDustTemplateView extends JstlView {
         return mergedOutputModel;
     }
 
-    protected void initViewAttribute() {
+    /**
+     * Create view source that using DustTemplateEngine
+     *
+     * @param templateKey
+     * @param json
+     * @param templateSource
+     * @return
+     */
+    protected String createViewSource(String templateKey, String json, String templateSource) {
+        StringWriter writer = new StringWriter();
+        getDustEngine().load(templateSource);
+        getDustEngine().render(writer, templateKey, json);
+
+        try {
+            return new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
+        } catch (UnsupportedEncodingException e) {
+            throw new DustViewException("Fail to create View Source", e);
+        }
+    }
+
+    boolean getRefreshParam(HttpServletRequest request) {
+        String param = request.getParameter("_refresh");
+        if (param != null && "Y".equals(param.toUpperCase())) {
+            return true;
+        }
+        return false;
+    }
+
+    protected void createViewAttribute() {
         if (viewTemplateLoader == null && getAttributesMap().get(TEMPLATE_LOADER) != null && getAttributesMap().get(TEMPLATE_LOADER) instanceof DustTemplateLoader) {
             setViewTemplateLoader((DustTemplateLoader) getAttributesMap().get(TEMPLATE_LOADER));
         }
@@ -113,24 +133,21 @@ public class SimpleDustTemplateView extends JstlView {
         }
     }
 
-    protected void setResponseMoreInformation(HttpServletResponse res) {
+    protected void addResponseMoreInformation(HttpServletResponse res) {
         res.addHeader("Accept-Charset", viewEncoding);
         res.setContentType(MediaType.TEXT_HTML_VALUE + ";charset=" + viewEncoding);
         res.setCharacterEncoding(viewEncoding);
     }
 
-    protected String createView(StringWriter writer) {
-
-        try {
-            return new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
-        } catch (UnsupportedEncodingException e) {
-            throw new DustViewException("Fail to create View Source", e);
+    protected String loadViewTemplateSource(String viewPath, boolean isRefresh) {
+        String templateSource = "";
+        if (viewSourceCacheProvider.isCached(viewPath) && !isRefresh) {
+            templateSource = viewSourceCacheProvider.get(viewPath);
+        } else {
+            templateSource = viewTemplateLoader.loadTemplate(viewPath);
+            viewSourceCacheProvider.add(viewPath, templateSource);
         }
-
-    }
-
-    protected String loadViewTemplateSource(String viewFile) {
-        return viewTemplateLoader.loadTemplate(viewFile);
+        return templateSource;
     }
 
     protected String createJsonObject(Object jsonData) {
@@ -142,15 +159,19 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected Object getJsonData(Map<String, ?> model) {
-        return model.get(DATA_KEY);
+        Object jsonParam = model.get(DATA_KEY);
+        if (jsonParam == null) {
+            throw new IllegalArgumentException("JSON Object must require! param name is " + DATA_KEY);
+        }
+        return jsonParam;
     }
 
     protected String getDustViewPath(Map<String, ?> model) {
         Object viewPath = model.get(VIEW_PATH);
-        if (viewPath != null && viewPath instanceof String) {
+        if (viewPath != null) {
             return viewPrefixPath + viewPath + viewSuffixPath;
         } else {
-            return null;
+            throw new IllegalArgumentException("View file path must require! param name is " + VIEW_PATH);
         }
     }
 
@@ -159,9 +180,9 @@ public class SimpleDustTemplateView extends JstlView {
         if (templateKey != null && templateKey instanceof String) {
             return (String) templateKey;
         } else if (templateKey != null && !(templateKey instanceof String)) {
-            throw new IllegalArgumentException("Template key must be java.lang.String!");
+            throw new IllegalArgumentException("Template key must be java.lang.String type!");
         } else {
-            return null;
+            throw new IllegalArgumentException("Template key must require! param name is " + TEMPLATE_KEY);
         }
     }
 
@@ -212,5 +233,21 @@ public class SimpleDustTemplateView extends JstlView {
 
     public void setViewEncoding(String viewEncoding) {
         this.viewEncoding = viewEncoding;
+    }
+
+    public void setViewSourceCacheProvider(ViewSourceCacheProvider viewSourceCacheProvider) {
+        this.viewSourceCacheProvider = viewSourceCacheProvider;
+    }
+
+    public String getViewEncoding() {
+        return viewEncoding;
+    }
+
+    public String getViewPrefixPath() {
+        return viewPrefixPath;
+    }
+
+    public String getViewSuffixPath() {
+        return viewSuffixPath;
     }
 }
