@@ -87,28 +87,28 @@ public class SimpleDustTemplateViewTest {
             }
         });
         // new - first call
-        String src = v.loadViewTemplateSource(viewPath, false);
+        String src = v.loadTemplateSource(viewPath, false);
         assertThat(src, is(refreshSrc));
 
         // cached src
-        src = v.loadViewTemplateSource(viewPath, false);
+        src = v.loadTemplateSource(viewPath, false);
         assertThat(src, is(cacheSrc));
 
         // new - refresh call
-        src = v.loadViewTemplateSource(viewPath, true);
+        src = v.loadTemplateSource(viewPath, true);
         assertThat(src, is(refreshSrc));
 
         // cached src
-        src = v.loadViewTemplateSource(viewPath, false);
+        src = v.loadTemplateSource(viewPath, false);
         assertThat(src, is(cacheSrc));
 
         // disable cache
         v.setViewCacheable(false);
-        src = v.loadViewTemplateSource(viewPath, true);
+        src = v.loadTemplateSource(viewPath, true);
         assertThat(src, is(refreshSrc));
 
         v.setViewCacheable(false);
-        src = v.loadViewTemplateSource(viewPath, false);
+        src = v.loadTemplateSource(viewPath, false);
         assertThat(src, is(refreshSrc));
     }
 

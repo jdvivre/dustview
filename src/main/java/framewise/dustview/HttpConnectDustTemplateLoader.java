@@ -1,9 +1,6 @@
 package framewise.dustview;
 
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.Charset;
@@ -26,11 +23,14 @@ public class HttpConnectDustTemplateLoader implements DustTemplateLoader {
     @Override
     public String loadTemplate(String templatePath) {
 
-        if (templatePath.startsWith("http://")) {
+        if (templatePath.startsWith("http://") || templatePath.startsWith("https://")) {
             try {
                 ResponseEntity<String> responseEntity =
                         restTemplate.exchange(templatePath, HttpMethod.GET, new HttpEntity<String>(
                                 new HttpHeaders()), String.class);
+                if (!HttpStatus.OK.equals(responseEntity.getStatusCode())) {
+                    throw new DustViewException("Failed load template source!(status code: " + responseEntity.getStatusCode() + ", reason: " + responseEntity.getBody());
+                }
                 String rawTemplate = responseEntity.getBody();
                 return new String(rawTemplate.getBytes(Charset.forName(fromEncoding)), toEncoding);
             } catch (Exception e) {

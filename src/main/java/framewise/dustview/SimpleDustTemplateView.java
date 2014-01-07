@@ -24,14 +24,16 @@ public class SimpleDustTemplateView extends JstlView {
 
     private final Logger logger = LoggerFactory.getLogger(SimpleDustTemplateView.class);
 
-    private static final String DEFAULT_VIEW_ENCODING = "UTF-8";
-    private static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
-    private static final String VIEW_PATH = "_VIEW_PATH";
-    private static final String DATA_KEY = "_DATA_KEY";
-    private static final String VIEW_SOURCE = "_view";
-    static final String TEMPLATE_LOADER = "_TEMPLATE_LOADER";
-    static final String VIEW_PATH_PREFIX = "_VIEW_PATH_PREFIX";
-    static final String VIEW_PATH_SUFFIX = "_VIEW_PATH_SUFFIX";
+    public static final String VIEW_PATH_OVERRIDE = "_VIEW_PATH_OVERRIDE";
+    public static final String DEFAULT_VIEW_ENCODING = "UTF-8";
+    public static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
+    public static final String VIEW_PATH = "_VIEW_PATH";
+    public static final String VIEW_SOURCE = "_view";
+
+    public static final String DATA_KEY = "_DATA_KEY";
+    public static final String TEMPLATE_LOADER = "_TEMPLATE_LOADER";
+    public static final String VIEW_PATH_PREFIX = "_VIEW_PATH_PREFIX";
+    public static final String VIEW_PATH_SUFFIX = "_VIEW_PATH_SUFFIX";
 
     private ObjectMapper jsonMapper = new ObjectMapper();
     private DustTemplateEngine dustEngine = new DustTemplateEngine();
@@ -76,7 +78,7 @@ public class SimpleDustTemplateView extends JstlView {
         // load template source
         boolean isRefresh = getRefreshParam(request);
         String viewPath = getDustViewPath(mergedOutputModel);
-        String templateSource = loadViewTemplateSource(viewPath, isRefresh);
+        String templateSource = loadTemplateSource(viewPath, isRefresh);
 
         // Dust.js compile ~ rendering
         String viewSource = createViewSource(templateKey, json, templateSource);
@@ -141,7 +143,7 @@ public class SimpleDustTemplateView extends JstlView {
         res.setCharacterEncoding(viewEncoding);
     }
 
-    protected String loadViewTemplateSource(String viewPath, boolean isRefresh) {
+    protected String loadTemplateSource(String viewPath, boolean isRefresh) {
         String templateSource = "";
         if (viewCacheable && viewSourceCacheProvider.isCached(viewPath) && !isRefresh) {
             templateSource = viewSourceCacheProvider.get(viewPath);
@@ -172,7 +174,11 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected String getDustViewPath(Map<String, ?> model) {
-        Object viewPath = model.get(VIEW_PATH);
+        Object viewPath = model.get(VIEW_PATH_OVERRIDE);
+        if (viewPath != null) {
+            return (String) viewPath;
+        }
+        viewPath = model.get(VIEW_PATH);
         if (viewPath != null) {
             return viewPrefixPath + viewPath + viewSuffixPath;
         } else {
@@ -184,10 +190,8 @@ public class SimpleDustTemplateView extends JstlView {
         Object templateKey = model.get(TEMPLATE_KEY);
         if (templateKey != null && templateKey instanceof String) {
             return (String) templateKey;
-        } else if (templateKey != null && !(templateKey instanceof String)) {
-            throw new IllegalArgumentException("Template key must be java.lang.String type!");
         } else {
-            throw new IllegalArgumentException("Template key must require! param name is " + TEMPLATE_KEY);
+            return null;
         }
     }
 
