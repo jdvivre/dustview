@@ -8,9 +8,11 @@ import java.io.FileInputStream;
 /**
  * This class support to loading template file where is local file system.
  *
+ * Internal implementation code is using resource function of Spring framework.
+ *
  * @author chanwook
  */
-public class FileSystemDustTemplateLoader implements DustTemplateLoader {
+public class ClasspathSupportFileSystemDustTemplateLoader implements DustTemplateLoader {
 
     @Override
     public String loadTemplate(String templatePath) {
@@ -30,7 +32,7 @@ public class FileSystemDustTemplateLoader implements DustTemplateLoader {
 
             return viewSource;
         } catch (Exception e) {
-            throw new DustViewException("File Access Exeption to loading Template!", e);
+            throw new DustViewException("File Access Exception to loading Template!", e);
         }
     }
 }

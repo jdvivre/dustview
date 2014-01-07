@@ -7,9 +7,9 @@ import static org.hamcrest.CoreMatchers.*;
 /**
  * @author chanwook
  */
-public class FileSystemDustTemplateLoaderTest {
+public class ClasspathSupportFileSystemDustTemplateLoaderTest {
 
-    FileSystemDustTemplateLoader l = new FileSystemDustTemplateLoader();
+    ClasspathSupportFileSystemDustTemplateLoader l = new ClasspathSupportFileSystemDustTemplateLoader();
 
     @Test
     public void success() {

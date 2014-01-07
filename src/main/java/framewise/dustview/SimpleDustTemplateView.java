@@ -63,7 +63,7 @@ public class SimpleDustTemplateView extends JstlView {
 
         Map<String, Object> mergedOutputModel = super.createMergedOutputModel(model, request, res);
 
-        createViewAttribute();
+        resolvePropertyByViewAttribute();
 
         // Compose Variable for Dust View
         String templateKey = getDustTemplateKey(mergedOutputModel);
@@ -72,8 +72,7 @@ public class SimpleDustTemplateView extends JstlView {
         }
 
         // create JSON Object that used to model at Dust VIEW
-        Object jsonData = getJsonData(mergedOutputModel);
-        String json = createJsonObject(jsonData);
+        String json = createJsonObject(mergedOutputModel);
 
         // load template source
         boolean isRefresh = getRefreshParam(request);
@@ -93,6 +92,19 @@ public class SimpleDustTemplateView extends JstlView {
         mergedOutputModel.put(VIEW_SOURCE, viewSource);
 
         return mergedOutputModel;
+    }
+
+    protected String createJsonObject(Map<String, Object> model) {
+        Object jsonParam = model.get(DATA_KEY);
+        if (jsonParam == null) {
+            throw new IllegalArgumentException("JSON Object must require! param name is " + DATA_KEY);
+        }
+
+        try {
+            return getJsonMapper().writeValueAsString(jsonParam);
+        } catch (JsonProcessingException e) {
+            throw new DustViewException("Fail to create JSON Object[message: " + e.getMessage() + "]", e);
+        }
     }
 
     /**
@@ -123,7 +135,7 @@ public class SimpleDustTemplateView extends JstlView {
         return false;
     }
 
-    protected void createViewAttribute() {
+    protected void resolvePropertyByViewAttribute() {
         if (viewTemplateLoader == null && getAttributesMap().get(TEMPLATE_LOADER) != null && getAttributesMap().get(TEMPLATE_LOADER) instanceof DustTemplateLoader) {
             setViewTemplateLoader((DustTemplateLoader) getAttributesMap().get(TEMPLATE_LOADER));
         }
@@ -155,22 +167,6 @@ public class SimpleDustTemplateView extends JstlView {
             }
         }
         return templateSource;
-    }
-
-    protected String createJsonObject(Object jsonData) {
-        try {
-            return getJsonMapper().writeValueAsString(jsonData);
-        } catch (JsonProcessingException e) {
-            throw new DustViewException("Fail to create JSON Object[message: " + e.getMessage() + "]", e);
-        }
-    }
-
-    protected Object getJsonData(Map<String, ?> model) {
-        Object jsonParam = model.get(DATA_KEY);
-        if (jsonParam == null) {
-            throw new IllegalArgumentException("JSON Object must require! param name is " + DATA_KEY);
-        }
-        return jsonParam;
     }
 
     protected String getDustViewPath(Map<String, ?> model) {

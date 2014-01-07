@@ -27,7 +27,7 @@ public class SimpleDustTemplateViewTest {
         attributeMap.put(SimpleDustTemplateView.TEMPLATE_LOADER, mockTemplateLoader);
         v.setAttributesMap(attributeMap);
 
-        v.createViewAttribute();
+        v.resolvePropertyByViewAttribute();
 
         assertThat(v.getViewTemplateLoader(), CoreMatchers.<DustTemplateLoader>equalTo(mockTemplateLoader));
     }
@@ -42,7 +42,7 @@ public class SimpleDustTemplateViewTest {
         attributeMap.put(SimpleDustTemplateView.VIEW_PATH_SUFFIX, "/markup.js");
         v.setAttributesMap(attributeMap);
 
-        v.createViewAttribute();
+        v.resolvePropertyByViewAttribute();
 
         assertThat(v.getViewPrefixPath(), is("http://..."));
         assertThat(v.getViewSuffixPath(), is("/markup.js"));
