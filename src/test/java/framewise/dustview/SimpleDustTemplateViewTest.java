@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
@@ -112,6 +113,26 @@ public class SimpleDustTemplateViewTest {
         src = v.loadTemplateSource(viewPath, cacheKey, false);
         assertThat(src, is(refreshSrc));
     }
+    
+    @Test
+	public void cacheKey() throws Exception {
+    	
+    	v.setViewSuffixPath("/markup.js");
+    	Map<String, String> model = new HashMap<String, String>();
+    	
+    	model.put(SimpleDustTemplateView.VIEW_FILE_PATH, "path1/path2");
+    	String dustViewCacheKey = v.getDustViewCacheKey(model);
+    	assertThat("path1/path2/markup.js", is(dustViewCacheKey));
+    	
+    	model.put(SimpleDustTemplateView.VIEW_FILE_PATH, "path1/path2/");
+    	dustViewCacheKey = v.getDustViewCacheKey(model);
+    	assertThat("path1/path2/markup.js", is(dustViewCacheKey));
+
+    	model.put(SimpleDustTemplateView.VIEW_FILE_PATH, "/path1/path2/");
+    	dustViewCacheKey = v.getDustViewCacheKey(model);
+    	assertThat("path1/path2/markup.js", is(dustViewCacheKey));
+		
+	}
 
     static class MockTemplateLoader implements DustTemplateLoader {
         @Override

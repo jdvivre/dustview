@@ -102,7 +102,6 @@ public class SimpleDustTemplateView extends JstlView {
 
         mergedOutputModel.put(this.viewSource, viewSource);
         Object object = mergedOutputModel.get(CONTENT_JSON);
-        System.out.println(object);
 
         return mergedOutputModel;
     }
@@ -222,7 +221,14 @@ public class SimpleDustTemplateView extends JstlView {
 
     	Object viewPath = model.get(VIEW_FILE_PATH);
     	if (viewPath != null) {
-    		return viewPath + viewSuffixPath;
+    		
+    		String cacheKey = viewPath + viewSuffixPath;
+    		cacheKey = cacheKey.replaceAll("//", "/");
+    		if(cacheKey.startsWith("/")) {
+    			cacheKey = cacheKey.substring(1);
+    		}
+    		
+    		return cacheKey;
     	} else {
     		throw new IllegalArgumentException("View Cache Key must require! param name is " + VIEW_FILE_PATH);
     	}
