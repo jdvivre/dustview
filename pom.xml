@@ -67,6 +67,7 @@
             <groupId>org.mozilla</groupId>
             <artifactId>rhino</artifactId>
             <version>1.7R4</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- TODO refactoring config.. -->
@@ -98,6 +99,7 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-webmvc</artifactId>
             <version>${spring.version}</version>
+			<scope>provided</scope>
         </dependency>
 
         <dependency>

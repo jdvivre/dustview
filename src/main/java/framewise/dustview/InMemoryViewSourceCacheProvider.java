@@ -26,4 +26,15 @@ public class InMemoryViewSourceCacheProvider implements ViewSourceCacheProvider 
     public void add(String viewPath, String templateSource) {
         cache.put(viewPath, templateSource);
     }
+
+	@Override
+	public boolean remove(String viewPath) {
+		
+		if (isCached(viewPath)) {
+			cache.remove(viewPath);
+			return true;
+		} else {
+			return false;
+		}
+	}
 }

@@ -30,4 +30,6 @@ public interface ViewSourceCacheProvider {
      */
     void add(String viewPath, String templateSource);
 
+    boolean remove(String viewPath);
+    
 }

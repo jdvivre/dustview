@@ -1,14 +1,14 @@
 package framewise.dustview;
 
-import org.hamcrest.CoreMatchers;
-import org.junit.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
-
-import java.util.HashMap;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+
+import java.util.HashMap;
+
+import org.hamcrest.CoreMatchers;
+import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 
 /**
@@ -73,6 +73,7 @@ public class SimpleDustTemplateViewTest {
         final String refreshSrc = "<html>refresh</html>";
         final String cacheSrc = "<html>cache</html>";
         final String viewPath = "view1";
+        final String cacheKey = "cachekey1";
 
         v.setViewTemplateLoader(new DustTemplateLoader() {
             @Override
@@ -87,28 +88,28 @@ public class SimpleDustTemplateViewTest {
             }
         });
         // new - first call
-        String src = v.loadTemplateSource(viewPath, false);
+        String src = v.loadTemplateSource(viewPath, cacheKey, false);
         assertThat(src, is(refreshSrc));
 
         // cached src
-        src = v.loadTemplateSource(viewPath, false);
+        src = v.loadTemplateSource(viewPath, cacheKey, false);
         assertThat(src, is(cacheSrc));
 
         // new - refresh call
-        src = v.loadTemplateSource(viewPath, true);
+        src = v.loadTemplateSource(viewPath, cacheKey, true);
         assertThat(src, is(refreshSrc));
 
         // cached src
-        src = v.loadTemplateSource(viewPath, false);
+        src = v.loadTemplateSource(viewPath, cacheKey, false);
         assertThat(src, is(cacheSrc));
 
         // disable cache
         v.setViewCacheable(false);
-        src = v.loadTemplateSource(viewPath, true);
+        src = v.loadTemplateSource(viewPath, cacheKey, true);
         assertThat(src, is(refreshSrc));
 
         v.setViewCacheable(false);
-        src = v.loadTemplateSource(viewPath, false);
+        src = v.loadTemplateSource(viewPath, cacheKey, false);
         assertThat(src, is(refreshSrc));
     }
 
