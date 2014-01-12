@@ -1,10 +1,10 @@
 package framewise.dustview;
 
-import java.nio.charset.Charset;
-
 import org.springframework.http.*;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
+
+import java.nio.charset.Charset;
 
 /**
  * This class support to loading template file where is remote repository(ex. CDN)
@@ -35,16 +35,17 @@ public class HttpConnectDustTemplateLoader implements DustTemplateLoader {
                 ResponseEntity<String> responseEntity =
                         restTemplate.exchange(templatePath, HttpMethod.GET, new HttpEntity<String>(
                                 headers), String.class);
+
                 if (!HttpStatus.OK.equals(responseEntity.getStatusCode())) {
                     throw new DustViewException("Failed load template source!(status code: " + responseEntity.getStatusCode() + ", reason: " + responseEntity.getBody());
                 }
-                
-                String rawTemplate = responseEntity.getBody();
-                if(StringUtils.hasText(fromEncoding) && StringUtils.hasText(toEncoding)) {
-                	rawTemplate = new String(rawTemplate.getBytes(Charset.forName(fromEncoding)), toEncoding);
+
+                String templateSource = responseEntity.getBody();
+                if (StringUtils.hasText(fromEncoding) && StringUtils.hasText(toEncoding)) {
+                    templateSource = new String(templateSource.getBytes(Charset.forName(fromEncoding)), toEncoding);
                 }
-                
-                return rawTemplate;
+
+                return templateSource;
             } catch (Exception e) {
                 throw new DustViewException("Failed to load Dust Tempmlate.", e);
             }

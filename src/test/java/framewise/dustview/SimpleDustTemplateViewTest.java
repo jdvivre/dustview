@@ -121,15 +121,15 @@ public class SimpleDustTemplateViewTest {
     	Map<String, String> model = new HashMap<String, String>();
     	
     	model.put(SimpleDustTemplateView.VIEW_FILE_PATH, "path1/path2");
-    	String dustViewCacheKey = v.getDustViewCacheKey(model);
+    	String dustViewCacheKey = v.getViewCacheKey(model);
     	assertThat("path1/path2/markup.js", is(dustViewCacheKey));
     	
     	model.put(SimpleDustTemplateView.VIEW_FILE_PATH, "path1/path2/");
-    	dustViewCacheKey = v.getDustViewCacheKey(model);
+    	dustViewCacheKey = v.getViewCacheKey(model);
     	assertThat("path1/path2/markup.js", is(dustViewCacheKey));
 
     	model.put(SimpleDustTemplateView.VIEW_FILE_PATH, "/path1/path2/");
-    	dustViewCacheKey = v.getDustViewCacheKey(model);
+    	dustViewCacheKey = v.getViewCacheKey(model);
     	assertThat("path1/path2/markup.js", is(dustViewCacheKey));
 		
 	}

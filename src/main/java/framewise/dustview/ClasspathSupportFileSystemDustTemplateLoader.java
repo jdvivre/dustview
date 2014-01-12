@@ -22,7 +22,6 @@ public class ClasspathSupportFileSystemDustTemplateLoader implements DustTemplat
             throw new DustViewException("Template File Not Found in local system!!");
         }
 
-
         try {
             byte[] bytes = new byte[(int) fileResource.contentLength()];
             new DataInputStream(new FileInputStream(fileResource.getFile())).readFully(bytes);
