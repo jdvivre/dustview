@@ -207,7 +207,7 @@ public class SimpleDustTemplateView extends JstlView {
 
             String cacheable = (String) getAttributesMap().get(VIEW_CACHEABLE);
             if ("true".equalsIgnoreCase(cacheable) || "false".equalsIgnoreCase(cacheable)) {
-                setViewCacheable(Boolean.valueOf(cacheable));
+                setViewCacheable(Boolean.valueOf(cacheable.toLowerCase()));
             }
         }
 
