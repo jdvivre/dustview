@@ -55,7 +55,7 @@ public class SimpleDustTemplateView extends JstlView {
     private String viewSuffixPath = "";
     private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
 
-    private ContentCacheProvider contentCacheProvider = new InMemoryContentCacheProvider();
+//    private ContentCacheProvider contentCacheProvider = new InMemoryContentCacheProvider();
 
     private boolean viewCacheable = true;
 
@@ -156,18 +156,22 @@ public class SimpleDustTemplateView extends JstlView {
      */
     protected String renderingView(String templateKey, String json, boolean usedCacheView) {
         // view도 동일하고, JSON도 동일하다면 다시 렌더링하지 않고 저장해둔 값을 사용함
+        /*
         if (usedCacheView && contentCacheProvider.isCached(templateKey, json)) {
             return contentCacheProvider.get(templateKey);
         }
+        */
 
         StringWriter writer = new StringWriter();
         getDustEngine().render(writer, templateKey, json);
 
         try {
             String renderedView = new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
+            /*
             if (viewCacheable) {
                 contentCacheProvider.add(templateKey, json, renderedView);
             }
+            */
             return renderedView;
         } catch (UnsupportedEncodingException e) {
             throw new DustViewException("Fail to create View Source", e);
