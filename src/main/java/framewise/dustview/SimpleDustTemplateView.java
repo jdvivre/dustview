@@ -91,7 +91,7 @@ public class SimpleDustTemplateView extends JstlView {
         // load template source
         loadTemplateSource(request, mergedOutputModel);
 
-        // Dust.js compile ~ rendering
+        // rendering
         String renderView = renderingView(templateKey, json);
 
         addResponseMoreInformation(res);
@@ -113,20 +113,23 @@ public class SimpleDustTemplateView extends JstlView {
         String viewPath = getViewPath(mergedOutputModel);
         String cacheKey = getViewCacheKey(mergedOutputModel);
 
+        String templateSource = "";
         if (viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh) {
             //cache에서 로딩한 소스는 이미 loader에 올라가 있으니 다시 올릴필요가 없다.
             logger.debug("using cache view source");
+
+            templateSource = viewSourceCacheProvider.get(cacheKey);
         } else {
             logger.debug("loading new view source");
-            String templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
-            getDustEngine().load(templateSource);
+            templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
             //TODO cache에 넣을 필요도 없구나!
             if (viewCacheable) {
                 viewSourceCacheProvider.add(cacheKey, templateSource);
             }
         }
+        getDustEngine().load(templateSource);
 
     }
 
@@ -147,7 +150,6 @@ public class SimpleDustTemplateView extends JstlView {
 
     /**
      * Create view source that using DustTemplateEngine
-     *
      *
      * @param templateKey
      * @param json
@@ -175,7 +177,7 @@ public class SimpleDustTemplateView extends JstlView {
             */
 
             //handling error
-            if(renderedView.startsWith("Error: Template Not Found:")){
+            if (renderedView.startsWith("Error: Template Not Found:")) {
                 throw new DustViewException(renderedView);
             }
             return renderedView;
