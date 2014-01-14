@@ -89,10 +89,10 @@ public class SimpleDustTemplateView extends JstlView {
         String json = createJsonObject(mergedOutputModel);
 
         // load template source
-        boolean usedCacheView = loadTemplateSource(request, mergedOutputModel);
+        loadTemplateSource(request, mergedOutputModel);
 
         // Dust.js compile ~ rendering
-        String renderView = renderingView(templateKey, json, usedCacheView);
+        String renderView = renderingView(templateKey, json);
 
         addResponseMoreInformation(res);
 
@@ -108,7 +108,7 @@ public class SimpleDustTemplateView extends JstlView {
         return mergedOutputModel;
     }
 
-    private boolean loadTemplateSource(HttpServletRequest request, Map<String, Object> mergedOutputModel) {
+    private void loadTemplateSource(HttpServletRequest request, Map<String, Object> mergedOutputModel) {
         boolean isRefresh = getRefreshParam(request);
         String viewPath = getViewPath(mergedOutputModel);
         String cacheKey = getViewCacheKey(mergedOutputModel);
@@ -116,17 +116,16 @@ public class SimpleDustTemplateView extends JstlView {
         if (viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh) {
             //cache에서 로딩한 소스는 이미 loader에 올라가 있으니 다시 올릴필요가 없다.
             logger.debug("using cache view source");
-            return true;
         } else {
             logger.debug("loading new view source");
             String templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
             getDustEngine().load(templateSource);
 
+            //TODO cache에 넣을 필요도 없구나!
             if (viewCacheable) {
                 viewSourceCacheProvider.add(cacheKey, templateSource);
             }
-            return false;
         }
 
     }
@@ -149,12 +148,12 @@ public class SimpleDustTemplateView extends JstlView {
     /**
      * Create view source that using DustTemplateEngine
      *
+     *
      * @param templateKey
      * @param json
-     * @param usedCacheView
      * @return
      */
-    protected String renderingView(String templateKey, String json, boolean usedCacheView) {
+    protected String renderingView(String templateKey, String json) {
         // view도 동일하고, JSON도 동일하다면 다시 렌더링하지 않고 저장해둔 값을 사용함
         /*
         if (usedCacheView && contentCacheProvider.isCached(templateKey, json)) {
@@ -163,6 +162,8 @@ public class SimpleDustTemplateView extends JstlView {
         */
 
         StringWriter writer = new StringWriter();
+
+        // Rendering by DustEngine
         getDustEngine().render(writer, templateKey, json);
 
         try {
@@ -250,7 +251,7 @@ public class SimpleDustTemplateView extends JstlView {
             }
 
             return cacheKey;
-        }else {
+        } else {
             return "";
         }
     }

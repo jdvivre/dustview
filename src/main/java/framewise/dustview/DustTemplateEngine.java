@@ -117,12 +117,19 @@ public class DustTemplateEngine {
 
 //            Scriptable compileScope = context.newObject(globalScope);
 //            compileScope.setParentScope(globalScope);
+            /*
             Scriptable compileScope = globalScope;
 
             compileScope.put("source", compileScope, source);
             compileScope.put("templateKey", compileScope, templateKey);
 
-            return (String) context.evaluateString(compileScope, compileScript, compileSourceName, 0, null);
+            return (String) context.evaluateString(compileScope, compileScript, compileSourceName, 0, null);Scriptable compileScope = globalScope;
+            */
+
+            globalScope.put("source", globalScope, source);
+            globalScope.put("templateKey", globalScope, templateKey);
+
+            return (String) context.evaluateString(globalScope, compileScript, compileSourceName, 0, null);
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when compile Dust JS Source", e);
         } finally {
@@ -141,11 +148,18 @@ public class DustTemplateEngine {
 
 //            Scriptable loadScope = context.newObject(globalScope);
 //            loadScope.setParentScope(globalScope);
+            /*
             Scriptable loadScope = globalScope;
 
             loadScope.put("compiledSource", loadScope, compiledSource);
 
             context.evaluateString(loadScope, loadScript, compileSourceName, 0, null);
+            */
+
+            globalScope.put("compiledSource", globalScope, compiledSource);
+
+            context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
+
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when load Dust JS Source", e);
         } finally {
@@ -166,6 +180,8 @@ public class DustTemplateEngine {
         try {
 //            Scriptable renderScope = context.newObject(globalScope);
 //            renderScope.setParentScope(globalScope);
+
+            /*
             Scriptable renderScope = globalScope;
 
             renderScope.put("writer", renderScope, writer);
@@ -173,7 +189,13 @@ public class DustTemplateEngine {
             renderScope.put("templateKey", renderScope, templateKey);
 
             context.evaluateString(renderScope, renderScript, compileSourceName, 0, null);
+            */
 
+            globalScope.put("writer", globalScope, writer);
+            globalScope.put("json", globalScope, json);
+            globalScope.put("templateKey", globalScope, templateKey);
+
+            context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when Rendering Dust JS Source", e);
         } finally {
