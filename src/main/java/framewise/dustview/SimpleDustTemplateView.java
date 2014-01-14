@@ -173,6 +173,11 @@ public class SimpleDustTemplateView extends JstlView {
                 contentCacheProvider.add(templateKey, json, renderedView);
             }
             */
+
+            //handling error
+            if(renderedView.startsWith("Error: Template Not Found:")){
+                throw new DustViewException(renderedView);
+            }
             return renderedView;
         } catch (UnsupportedEncodingException e) {
             throw new DustViewException("Fail to create View Source", e);
