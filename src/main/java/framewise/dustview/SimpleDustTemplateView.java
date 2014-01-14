@@ -54,6 +54,9 @@ public class SimpleDustTemplateView extends JstlView {
     private String viewPrefixPath = "";
     private String viewSuffixPath = "";
     private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
+
+    private ContentCacheProvider contentCacheProvider = new InMemoryContentCacheProvider();
+
     private boolean viewCacheable = true;
 
     /**
@@ -86,26 +89,45 @@ public class SimpleDustTemplateView extends JstlView {
         String json = createJsonObject(mergedOutputModel);
 
         // load template source
-        boolean isRefresh = getRefreshParam(request);
-        String viewPath = getViewPath(mergedOutputModel);
-        String cacheKey = getViewCacheKey(mergedOutputModel);
-        String templateSource = loadTemplateSource(viewPath, cacheKey, isRefresh);
+        boolean usedCacheView = loadTemplateSource(request, mergedOutputModel);
 
         // Dust.js compile ~ rendering
-        String viewSource = createViewSource(templateKey, json, templateSource);
+        String renderView = renderingView(templateKey, json, usedCacheView);
 
         addResponseMoreInformation(res);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Dust View Rendering Result = TemplateKey: " + templateKey + ", Template File Path: " + viewPath +
-                    ", JSON: " + json + ", View Source: " + viewSource);
+//            logger.debug("Dust View Rendering Result = TemplateKey: " + templateKey + ", Template File Path: " + viewPath +
+//                    ", JSON: " + json + ", View Source: " + viewSource);
         }
 
         // Binding Result
-        mergedOutputModel.put(this.exportViewSourceKey, viewSource);
+        mergedOutputModel.put(this.exportViewSourceKey, renderView);
         mergedOutputModel.put(this.exportJsonKey, json);
 
         return mergedOutputModel;
+    }
+
+    private boolean loadTemplateSource(HttpServletRequest request, Map<String, Object> mergedOutputModel) {
+        boolean isRefresh = getRefreshParam(request);
+        String viewPath = getViewPath(mergedOutputModel);
+        String cacheKey = getViewCacheKey(mergedOutputModel);
+
+        if (viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh) {
+            //cache에서 로딩한 소스는 이미 loader에 올라가 있으니 다시 올릴필요가 없다.
+            logger.debug("using cache view source");
+            return true;
+        } else {
+            String templateSource = viewTemplateLoader.loadTemplate(viewPath);
+
+            getDustEngine().load(templateSource);
+
+            if (viewCacheable) {
+                viewSourceCacheProvider.add(cacheKey, templateSource);
+            }
+            return false;
+        }
+
     }
 
     protected String createJsonObject(Map<String, Object> model) {
@@ -128,16 +150,24 @@ public class SimpleDustTemplateView extends JstlView {
      *
      * @param templateKey
      * @param json
-     * @param templateSource
+     * @param usedCacheView
      * @return
      */
-    protected String createViewSource(String templateKey, String json, String templateSource) {
+    protected String renderingView(String templateKey, String json, boolean usedCacheView) {
+        //view도 동일하고, JSON도 동일하다면 다시 렌더링하지 않고 저장해둔 값을 사용함
+        if (usedCacheView && contentCacheProvider.isCached(templateKey, json)) {
+            return contentCacheProvider.get(templateKey);
+        }
+
         StringWriter writer = new StringWriter();
-        getDustEngine().load(templateSource);
         getDustEngine().render(writer, templateKey, json);
 
         try {
-            return new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
+            String renderedView = new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
+            if (viewCacheable) {
+                contentCacheProvider.add(templateKey, json, renderedView);
+            }
+            return renderedView;
         } catch (UnsupportedEncodingException e) {
             throw new DustViewException("Fail to create View Source", e);
         }
@@ -190,20 +220,6 @@ public class SimpleDustTemplateView extends JstlView {
         res.addHeader("Accept-Charset", viewEncoding);
         res.setContentType(MediaType.TEXT_HTML_VALUE + ";charset=" + viewEncoding);
         res.setCharacterEncoding(viewEncoding);
-    }
-
-    protected String loadTemplateSource(String viewPath, String cacheKey, boolean isRefresh) {
-        String templateSource = "";
-        if (viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh) {
-            templateSource = viewSourceCacheProvider.get(cacheKey);
-        } else {
-            templateSource = viewTemplateLoader.loadTemplate(viewPath);
-
-            if (viewCacheable) {
-                viewSourceCacheProvider.add(cacheKey, templateSource);
-            }
-        }
-        return templateSource;
     }
 
     protected String getViewPath(Map<String, ?> model) {
