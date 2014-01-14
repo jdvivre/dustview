@@ -118,6 +118,7 @@ public class SimpleDustTemplateView extends JstlView {
             logger.debug("using cache view source");
             return true;
         } else {
+            logger.debug("loading new view source");
             String templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
             getDustEngine().load(templateSource);
@@ -154,7 +155,7 @@ public class SimpleDustTemplateView extends JstlView {
      * @return
      */
     protected String renderingView(String templateKey, String json, boolean usedCacheView) {
-        //view도 동일하고, JSON도 동일하다면 다시 렌더링하지 않고 저장해둔 값을 사용함
+        // view도 동일하고, JSON도 동일하다면 다시 렌더링하지 않고 저장해둔 값을 사용함
         if (usedCacheView && contentCacheProvider.isCached(templateKey, json)) {
             return contentCacheProvider.get(templateKey);
         }
@@ -245,8 +246,8 @@ public class SimpleDustTemplateView extends JstlView {
             }
 
             return cacheKey;
-        } else {
-            throw new IllegalArgumentException("View Cache Key must require! param name is " + VIEW_FILE_PATH);
+        }else {
+            return "";
         }
     }
 

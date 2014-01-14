@@ -13,14 +13,12 @@ import java.nio.charset.Charset;
  */
 public class HttpConnectDustTemplateLoader implements DustTemplateLoader {
 
-    private static final String DEFAULT_FROM_ENCODING = "ISO-8859-1";
-    private static final String DEFAULT_TO_ENCODING = "UTF-8";
     private static final String DEFAULT_RESOURCE_ENCODING = "UTF-8";
 
     private RestTemplate restTemplate = new RestTemplate();
 
-    private String fromEncoding = DEFAULT_FROM_ENCODING;
-    private String toEncoding = DEFAULT_TO_ENCODING;
+    private String fromEncoding = "ISO-8859-1";
+    private String toEncoding = "UTF-8";
 
     private String resourceEncoding = DEFAULT_RESOURCE_ENCODING;
 

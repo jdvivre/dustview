@@ -67,7 +67,6 @@ public class DustTemplateEngine {
      *
      * @param dustJsStream
      * @param dustHelperJsStream
-     * @param dustExtentionJsStream 
      */
     protected void loadDustJsEngine(InputStream dustJsStream, InputStream dustHelperJsStream) {
     	this.loadDustJsEngine(dustJsStream, dustHelperJsStream, null);
@@ -114,8 +113,10 @@ public class DustTemplateEngine {
     public String compile(String source, String templateKey) {
         Context context = Context.enter();
 
-        Scriptable compileScope = context.newObject(globalScope);
-        compileScope.setParentScope(globalScope);
+//        Scriptable compileScope = context.newObject(globalScope);
+//        compileScope.setParentScope(globalScope);
+
+        Scriptable compileScope = globalScope;
 
         compileScope.put("source", compileScope, source);
         compileScope.put("templateKey", compileScope, templateKey);
@@ -135,8 +136,10 @@ public class DustTemplateEngine {
     public void load(String compiledSource) {
         Context context = Context.enter();
 
-        Scriptable loadScope = context.newObject(globalScope);
-        loadScope.setParentScope(globalScope);
+//        Scriptable loadScope = context.newObject(globalScope);
+//        loadScope.setParentScope(globalScope);
+
+        Scriptable loadScope = globalScope;
 
         loadScope.put("compiledSource", loadScope, compiledSource);
 
@@ -157,9 +160,10 @@ public class DustTemplateEngine {
      */
     public void render(Writer writer, String templateKey, String json) {
         Context context = Context.enter();
+//        Scriptable renderScope = context.newObject(globalScope);
+//        renderScope.setParentScope(globalScope);
 
-        Scriptable renderScope = context.newObject(globalScope);
-        renderScope.setParentScope(globalScope);
+        Scriptable renderScope = globalScope;
 
         try {
             renderScope.put("writer", renderScope, writer);
