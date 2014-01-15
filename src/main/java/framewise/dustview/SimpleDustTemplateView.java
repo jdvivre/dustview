@@ -124,7 +124,6 @@ public class SimpleDustTemplateView extends JstlView {
 
             templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
-            //TODO cache에 넣을 필요도 없구나!
             if (viewCacheable) {
                 viewSourceCacheProvider.add(cacheKey, templateSource);
             }

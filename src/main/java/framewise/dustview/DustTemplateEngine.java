@@ -1,6 +1,7 @@
 package framewise.dustview;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
@@ -30,6 +31,10 @@ public class DustTemplateEngine {
             "{   dust.render( templateKey, JSON.parse(json), "
                     + "function(error, data) { if(error) { writer.write(error);} else { writer.write( data );} } );}"
     );
+
+    private static final String NEW_RENDERING_SCRIPT = "function dustRender(templateKey, json, writer) {return dust.render(templateKey, JSON.parse(json) ,function(err, out){writer.write(out);});}";
+
+    private static final String NEW_LOADING_SCRIPT = "function dustLoad(source) { dust.loadSource(source); }";
 
     private static final String DEFAULT_ENCODING = "UTF-8";
 
@@ -96,6 +101,11 @@ public class DustTemplateEngine {
                 Reader dustJsExtentionReader = new InputStreamReader(dustExtentionJsStream, encoding);
                 context.evaluateReader(globalScope, dustJsExtentionReader, "/dust/dust.helpers.extension.js", dustExtentionJsStream.available(), null);
             }
+
+            context.evaluateString(globalScope, NEW_LOADING_SCRIPT, compileSourceName, 0, null);
+            context.evaluateString(globalScope, NEW_RENDERING_SCRIPT, compileSourceName, 0, null);
+
+
         } catch (Exception e) {
             logger.error("thrown exception when initialize step!", e);
             throw new DustViewException(e);
@@ -156,10 +166,15 @@ public class DustTemplateEngine {
             context.evaluateString(loadScope, loadScript, compileSourceName, 0, null);
             */
 
+            /*
             globalScope.put("compiledSource", globalScope, compiledSource);
 
             context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
+            */
 
+//            Scriptable scriptableObject = context.initStandardObjects();
+            Function fct = (Function) globalScope.get("dustLoad", globalScope);
+            fct.call(context, globalScope, globalScope, new Object[]{compiledSource});
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when load Dust JS Source", e);
         } finally {
@@ -191,11 +206,17 @@ public class DustTemplateEngine {
             context.evaluateString(renderScope, renderScript, compileSourceName, 0, null);
             */
 
+            /*
             globalScope.put("writer", globalScope, writer);
             globalScope.put("json", globalScope, json);
             globalScope.put("templateKey", globalScope, templateKey);
 
             context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
+            */
+
+//            Scriptable scriptableObject = context.initStandardObjects();
+            Function fct = (Function) globalScope.get("dustRender", globalScope);
+            fct.call(context, globalScope, globalScope, new Object[]{templateKey, json, writer});
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when Rendering Dust JS Source", e);
         } finally {
