@@ -50,6 +50,42 @@ public class DustTemplateEngineTest {
 		assertThat(writer.getBuffer().toString(), is("Hello World!"));
 	}
 
+    @Test
+    public void withCache() throws Exception {
+        DustTemplateEngine engine = new DustTemplateEngine();
+        String source = "Hello World!";
+        // compile
+        String compiled1 = engine.compile(source, "test1");
+        assertThat(
+                compiled1,
+                is("(function(){dust.register(\"test1\",body_0);function body_0(chk,ctx){return chk.write(\"Hello World!\");}return body_0;})();"));
+
+        // compile
+        String compiled2 = engine.compile(source, "test2");
+        assertThat(
+                compiled2,
+                is("(function(){dust.register(\"test2\",body_0);function body_0(chk,ctx){return chk.write(\"Hello World!\");}return body_0;})();"));
+
+        // load
+        engine.load(compiled1);
+        engine.load(compiled2);
+
+        // render
+        StringWriter writer1 = new StringWriter();
+        engine.render(writer1, "test1", "{}");
+        assertThat(writer1.getBuffer().toString(), is("Hello World!"));
+
+        // rerender
+        StringWriter writer2 = new StringWriter();
+        engine.render(writer2, "test2", "{}");
+        assertThat(writer2.getBuffer().toString(), is("Hello World!"));
+
+        StringWriter writer3 = new StringWriter();
+        engine.render(writer3, "test1", "{}");
+        assertThat(writer3.getBuffer().toString(), is("Hello World!"));
+
+    }
+
 	@Test
 	public void renderWithJson() throws Exception {
 		DustTemplateEngine engine = new DustTemplateEngine();

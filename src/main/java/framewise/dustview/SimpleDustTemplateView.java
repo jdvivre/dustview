@@ -127,8 +127,8 @@ public class SimpleDustTemplateView extends JstlView {
             if (viewCacheable) {
                 viewSourceCacheProvider.add(cacheKey, templateSource);
             }
+            getDustEngine().load(templateSource);
         }
-        getDustEngine().load(templateSource);
 
     }
 
