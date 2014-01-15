@@ -141,7 +141,7 @@ public class SimpleDustTemplateView extends JstlView {
 
     private void loadResourceToScriptEngine(String viewPath, String cachedTemplateSource) {
         if (logger.isInfoEnabled()) {
-            logger.debug("Compiled resource load to script engine!!(target: " + viewPath + "");
+            logger.info("Compiled resource load to script engine!!(target: " + viewPath + "");
         }
 
         getDustEngine().load(cachedTemplateSource);
