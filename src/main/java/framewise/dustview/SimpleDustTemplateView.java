@@ -53,7 +53,7 @@ public class SimpleDustTemplateView extends JstlView {
     private String exportJsonKey = DEFAULT_EXPORT_JSON_KEY;
     private String viewPrefixPath = "";
     private String viewSuffixPath = "";
-    private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
+    private ViewSourceCacheProvider viewSourceCacheProvider = new PreloadViewSourceCacheProvider();
 
 //    private ContentCacheProvider contentCacheProvider = new InMemoryContentCacheProvider();
 
@@ -113,16 +113,16 @@ public class SimpleDustTemplateView extends JstlView {
         String viewPath = getViewPath(mergedOutputModel);
         String cacheKey = getViewCacheKey(mergedOutputModel);
 
-        String templateSource = "";
+//        String templateSource = "";
         if (viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh) {
             //cache에서 로딩한 소스는 이미 loader에 올라가 있으니 다시 올릴필요가 없다.
             logger.debug("using cache view source");
 
-            templateSource = viewSourceCacheProvider.get(cacheKey);
+            viewSourceCacheProvider.get(cacheKey);
         } else {
             logger.debug("loading new view source");
 
-            templateSource = viewTemplateLoader.loadTemplate(viewPath);
+            String templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
             if (viewCacheable) {
                 viewSourceCacheProvider.add(cacheKey, templateSource);
