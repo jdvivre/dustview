@@ -6,12 +6,8 @@ import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.StringUtils;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 
 /**
  * Support server-side dust rendering Function. This class load by Rhino JavaScript Engine.
@@ -20,21 +16,15 @@ import java.io.Writer;
  */
 public class DustTemplateEngine {
 
+    private static final int DEFAULT_OPTIMIZATION_LEVEL = -1;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private static final String DEFAULT_COMPILE_SOURCE_NAME = "ServerSideDustCompiler";
     private static final String DEFAULT_DUST_JS_FILE_PATH = "/dust/dust-full-1.1.1.js";
     private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.0.js";
     private static final String DEFAULT_COMPILE_SCRIPT = "(dust.compile(source, templateKey))";
-    private static final String DEFAULT_LOAD_SCRIPT = "(dust.loadSource(compiledSource))";
-    private static final String DEFAULT_RENDER_SCRIPT = (
-            "{   dust.render( templateKey, JSON.parse(json), "
-                    + "function(error, data) { if(error) { writer.write(error);} else { writer.write( data );} } );}"
-    );
-
-    private static final String NEW_RENDERING_SCRIPT = "function dustRender(templateKey, json, writer) {return dust.render(templateKey, JSON.parse(json) ,function(err, out){writer.write(out);});}";
-
-    private static final String NEW_LOADING_SCRIPT = "function dustLoad(source) { dust.loadSource(source); }";
+    private static final String DEFAULT_LOAD_SCRIPT = "function dustLoad(source) { dust.loadSource(source); }";
+    private static final String DEFAULT_RENDER_SCRIPT = "function dustRender(templateKey, json, writer) {return dust.render(templateKey, JSON.parse(json) ,function(err, out){writer.write(out);});}";
 
     private static final String DEFAULT_ENCODING = "UTF-8";
 
@@ -47,7 +37,8 @@ public class DustTemplateEngine {
     private String compileScript = DEFAULT_COMPILE_SCRIPT;
     private String loadScript = DEFAULT_LOAD_SCRIPT;
     private String renderScript = DEFAULT_RENDER_SCRIPT;
-    private String dsutJsExtensionFilePath;
+    // value: -1 ~ 9
+    private int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 
     public DustTemplateEngine() {
         initializeContext();
@@ -60,11 +51,7 @@ public class DustTemplateEngine {
         InputStream dustJsStream = getDustJsStream(getDustJsFilePath());
         InputStream dustHelperJsStream = getDustJsStream(getDustJsHelperFilePath());
 
-        if (StringUtils.hasText(dsutJsExtensionFilePath)) {
-            loadDustJsEngine(dustJsStream, dustHelperJsStream, getDustJsStream(dsutJsExtensionFilePath));
-        } else {
-            loadDustJsEngine(dustJsStream, dustHelperJsStream);
-        }
+        loadDustJsEngine(dustJsStream, dustHelperJsStream);
     }
 
 
@@ -75,44 +62,63 @@ public class DustTemplateEngine {
      * @param dustHelperJsStream
      */
     protected void loadDustJsEngine(InputStream dustJsStream, InputStream dustHelperJsStream) {
-        this.loadDustJsEngine(dustJsStream, dustHelperJsStream, null);
-    }
+        Reader dustJsReader = null;
+        Reader dustJsHelperReader = null;
 
-    /**
-     * Initialize Dust JS Context
-     *
-     * @param dustJsStream
-     * @param dustHelperJsStream
-     * @param dustExtentionJsStream
-     */
-    protected void loadDustJsEngine(InputStream dustJsStream, InputStream dustHelperJsStream, InputStream dustExtentionJsStream) {
+        Context context = Context.enter();
         try {
-            Reader dustJsReader = new InputStreamReader(dustJsStream, encoding);
-            Reader dustJsHelperReader = new InputStreamReader(dustHelperJsStream, encoding);
+            dustJsReader = new InputStreamReader(dustJsStream, encoding);
+            dustJsHelperReader = new InputStreamReader(dustHelperJsStream, encoding);
 
-            Context context = Context.enter();
-//            context.setOptimizationLevel(9);
-            context.setOptimizationLevel(-1);
+            context.setOptimizationLevel(optimizationLevel);
 
             globalScope = context.initStandardObjects();
+            // loading dust script files
             context.evaluateReader(globalScope, dustJsReader, dustJsFilePath, dustJsStream.available(), null);
             context.evaluateReader(globalScope, dustJsHelperReader, dustJsHelperFilePath, dustHelperJsStream.available(), null);
 
-            if (dustExtentionJsStream != null) {
-                Reader dustJsExtentionReader = new InputStreamReader(dustExtentionJsStream, encoding);
-                context.evaluateReader(globalScope, dustJsExtentionReader, "/dust/dust.helpers.extension.js", dustExtentionJsStream.available(), null);
-            }
-
-            context.evaluateString(globalScope, NEW_LOADING_SCRIPT, compileSourceName, 0, null);
-            context.evaluateString(globalScope, NEW_RENDERING_SCRIPT, compileSourceName, 0, null);
+            // loading dust load & rendering script
+            context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
+            context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
 
         } catch (Exception e) {
-            logger.error("thrown exception when initialize step!", e);
-            throw new DustViewException(e);
+            throw new DustViewException("thrown exception when initialize step for core engine!", e);
         } finally {
             Context.exit();
+
+            try {
+                dustJsReader.close();
+                dustJsHelperReader.close();
+            } catch (IOException e) {
+                logger.error("Fail to dust eignen loading!!", e);
+                throw new DustViewException(e);
+            }
+
         }
     }
+
+    public void loadExtensionFunction(String filePath) {
+        Reader dustJsExtentionReader = null;
+        Context context = Context.enter();
+        try {
+            InputStream stream = getDustJsStream(filePath);
+            dustJsExtentionReader = new InputStreamReader(stream, encoding);
+            context.evaluateReader(globalScope, dustJsExtentionReader, filePath, stream.available(), null);
+        } catch (Exception e) {
+            throw new DustViewException("thrown exception when initialize step for extension!", e);
+        } finally {
+            Context.exit();
+
+            try {
+                dustJsExtentionReader.close();
+            } catch (IOException e) {
+                logger.error("Fail to dust extension file!!", e);
+                throw new DustViewException(e);
+            }
+        }
+    }
+
+    //TODO refactoring
 
     /**
      * Compile HTML Markup that used by Dust.js
@@ -124,17 +130,7 @@ public class DustTemplateEngine {
     public String compile(String source, String templateKey) {
         final Context context = Context.enter();
         try {
-
-//            Scriptable compileScope = context.newObject(globalScope);
-//            compileScope.setParentScope(globalScope);
-            /*
-            Scriptable compileScope = globalScope;
-
-            compileScope.put("source", compileScope, source);
-            compileScope.put("templateKey", compileScope, templateKey);
-
-            return (String) context.evaluateString(compileScope, compileScript, compileSourceName, 0, null);Scriptable compileScope = globalScope;
-            */
+            context.setOptimizationLevel(optimizationLevel);
 
             globalScope.put("source", globalScope, source);
             globalScope.put("templateKey", globalScope, templateKey);
@@ -155,25 +151,7 @@ public class DustTemplateEngine {
     public void load(String compiledSource) {
         final Context context = Context.enter();
         try {
-
-//            Scriptable loadScope = context.newObject(globalScope);
-//            loadScope.setParentScope(globalScope);
-            /*
-            Scriptable loadScope = globalScope;
-
-            loadScope.put("compiledSource", loadScope, compiledSource);
-
-            context.evaluateString(loadScope, loadScript, compileSourceName, 0, null);
-            */
-
-            /*
-            globalScope.put("compiledSource", globalScope, compiledSource);
-
-            context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
-            */
-
-//            Scriptable scriptableObject = context.initStandardObjects();
-            context.setOptimizationLevel(-1);
+            context.setOptimizationLevel(optimizationLevel);
             Function fct = (Function) globalScope.get("dustLoad", globalScope);
             fct.call(context, globalScope, globalScope, new Object[]{compiledSource});
         } catch (JavaScriptException e) {
@@ -194,29 +172,7 @@ public class DustTemplateEngine {
     public void render(Writer writer, String templateKey, String json) {
         final Context context = Context.enter();
         try {
-//            Scriptable renderScope = context.newObject(globalScope);
-//            renderScope.setParentScope(globalScope);
-
-            /*
-            Scriptable renderScope = globalScope;
-
-            renderScope.put("writer", renderScope, writer);
-            renderScope.put("json", renderScope, json);
-            renderScope.put("templateKey", renderScope, templateKey);
-
-            context.evaluateString(renderScope, renderScript, compileSourceName, 0, null);
-            */
-
-            /*
-            globalScope.put("writer", globalScope, writer);
-            globalScope.put("json", globalScope, json);
-            globalScope.put("templateKey", globalScope, templateKey);
-
-            context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
-            */
-
-//            Scriptable scriptableObject = context.initStandardObjects();
-            context.setOptimizationLevel(-1);
+            context.setOptimizationLevel(optimizationLevel);
             Function fct = (Function) globalScope.get("dustRender", globalScope);
             fct.call(context, globalScope, globalScope, new Object[]{templateKey, json, writer});
         } catch (JavaScriptException e) {
@@ -255,10 +211,6 @@ public class DustTemplateEngine {
         return dustJsHelperFilePath;
     }
 
-    public String getDsutJsExtensionFilePath() {
-        return dsutJsExtensionFilePath;
-    }
-
     public void setDustJsHelperFilePath(String dustJsHelperFilePath) {
         this.dustJsHelperFilePath = dustJsHelperFilePath;
     }
@@ -283,8 +235,4 @@ public class DustTemplateEngine {
         this.compileSourceName = compileSourceName;
     }
 
-
-    public void setDsutJsExtensionFilePath(String dsutJsExtensionFilePath) {
-        this.dsutJsExtensionFilePath = dsutJsExtensionFilePath;
-    }
 }

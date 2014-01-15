@@ -10,26 +10,33 @@ public interface ViewSourceCacheProvider {
     /**
      * check cached view
      *
-     * @param viewPath
+     * @param key
      * @return
      */
-    boolean isCached(String viewPath);
+    boolean isCached(String key);
 
     /**
      * get cached view
      *
-     * @param viewPath
+     * @param key
      * @return
      */
-    String get(String viewPath);
+    String get(String key);
 
     /**
      * add to cache
-     * @param viewPath
+     *
+     * @param key
      * @param templateSource
      */
-    void add(String viewPath, String templateSource);
+    void add(String key, String templateSource);
 
-    boolean remove(String viewPath);
-    
+    /**
+     * remove resource at cache
+     *
+     * @param key
+     * @return
+     */
+    boolean remove(String key);
+
 }

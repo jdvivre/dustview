@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.support.RequestContext;
@@ -28,7 +29,8 @@ public class SimpleDustTemplateView extends JstlView {
     public static final String VIEW_PATH_OVERRIDE = "_VIEW_PATH_OVERRIDE";
     public static final String DEFAULT_VIEW_ENCODING = "UTF-8";
     public static final String DEFAULT_EXPORT_VIEW_SOURCE_KEY = "_view";
-    private static final String DEFAULT_EXPORT_JSON_KEY = "_json";
+    public static final String DEFAULT_EXPORT_JSON_KEY = "_json";
+    public static final String DUST_JS_EXTENSION_FILE_PATH = "_EXTENSION_JS_FILE_PATH";
 
     public static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
     public static final String VIEW_FILE_PATH = "_VIEW_FILE_PATH";
@@ -41,7 +43,6 @@ public class SimpleDustTemplateView extends JstlView {
     public static final String VIEW_SOURCE = "_VIEW_SOURCE";
     public static final String CACHE_PROVIDER = "_CACHE_PROVIDER";
     public static final String VIEW_CACHEABLE = "_VIEW_CACHE";
-    public static final String DUST_JS_EXTENSION_FILE_PATH = "_EXTENSION_JS_FILE_PATH";
 
     private ObjectMapper jsonMapper = new ObjectMapper();
     private DustTemplateEngine dustEngine = new DustTemplateEngine();
@@ -55,7 +56,7 @@ public class SimpleDustTemplateView extends JstlView {
     private String viewSuffixPath = "";
     private ViewSourceCacheProvider viewSourceCacheProvider = new PreloadViewSourceCacheProvider();
 
-//    private ContentCacheProvider contentCacheProvider = new InMemoryContentCacheProvider();
+    private DustViewErrorHandler errorHandler = new DefaultDustViewErrorHandler();
 
     private boolean viewCacheable = true;
 
@@ -67,17 +68,9 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     @Override
-    protected RequestContext createRequestContext(HttpServletRequest request, HttpServletResponse response, Map<String, Object> model) {
-        return super.createRequestContext(request, response, model);
-    }
-
-    @Override
     protected Map<String, Object> createMergedOutputModel(final Map<String, ? extends Object> model, HttpServletRequest request, HttpServletResponse res) {
 
-        Map<String, Object> mergedOutputModel = new HashMap<String, Object>();
-        mergedOutputModel.putAll(super.createMergedOutputModel(model, request, res));
-
-        resolvePropertyByViewAttribute();
+        Map<String, Object> mergedOutputModel = prepareToRendering(model, request, res);
 
         // Compose Variable for Dust View
         String templateKey = getDustTemplateKey(mergedOutputModel);
@@ -89,9 +82,9 @@ public class SimpleDustTemplateView extends JstlView {
         String json = createJsonObject(mergedOutputModel);
 
         // load template source
-        loadTemplateSource(request, mergedOutputModel);
+        loadTemplateSource(null, request, mergedOutputModel);
 
-        // rendering
+        // rendering view
         String renderView = renderingView(templateKey, json);
 
         addResponseMoreInformation(res);
@@ -101,35 +94,61 @@ public class SimpleDustTemplateView extends JstlView {
 //                    ", JSON: " + json + ", View Source: " + viewSource);
         }
 
-        // Binding Result
-        mergedOutputModel.put(this.exportViewSourceKey, renderView);
-        mergedOutputModel.put(this.exportJsonKey, json);
+        bindingResult(mergedOutputModel, json, renderView);
 
         return mergedOutputModel;
     }
 
-    private void loadTemplateSource(HttpServletRequest request, Map<String, Object> mergedOutputModel) {
+    private Map<String, Object> prepareToRendering(Map<String, ? extends Object> model, HttpServletRequest request, HttpServletResponse res) {
+        Map<String, Object> mergedOutputModel = new HashMap<String, Object>();
+        mergedOutputModel.putAll(super.createMergedOutputModel(model, request, res));
+
+        return mergedOutputModel;
+    }
+
+    protected void bindingResult(Map<String, Object> mergedOutputModel, String json, String renderView) {
+        mergedOutputModel.put(this.exportViewSourceKey, renderView);
+        mergedOutputModel.put(this.exportJsonKey, json);
+    }
+
+    protected void loadTemplateSource(String templateKey, HttpServletRequest request, Map<String, Object> mergedOutputModel) {
         boolean isRefresh = getRefreshParam(request);
         String viewPath = getViewPath(mergedOutputModel);
-        String cacheKey = getViewCacheKey(mergedOutputModel);
 
-//        String templateSource = "";
-        if (viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh) {
-            //cache에서 로딩한 소스는 이미 loader에 올라가 있으니 다시 올릴필요가 없다.
-            logger.debug("using cache view source");
+        loadTemplateSource(isRefresh, viewPath, templateKey);
+    }
 
-            viewSourceCacheProvider.get(cacheKey);
+    protected void loadTemplateSource(boolean isRefresh, String viewPath, String cacheKey) {
+        if (isCaching(isRefresh, cacheKey)) {
+            String cachedTemplateSource = viewSourceCacheProvider.get(cacheKey);
+            // load to script engine when had to resource
+            if (StringUtils.hasText(cachedTemplateSource)) {
+                loadResourceToScriptEngine(viewPath, cachedTemplateSource);
+            }
+
+            logger.debug("using cached view resource");
         } else {
-            logger.debug("loading new view source");
-
             String templateSource = viewTemplateLoader.loadTemplate(viewPath);
+
+            logger.debug("load new view resource");
 
             if (viewCacheable) {
                 viewSourceCacheProvider.add(cacheKey, templateSource);
             }
-            getDustEngine().load(templateSource);
+            loadResourceToScriptEngine(viewPath, templateSource);
+        }
+    }
+
+    private void loadResourceToScriptEngine(String viewPath, String cachedTemplateSource) {
+        if (logger.isInfoEnabled()) {
+            logger.debug("Compiled resource load to script engine!!(target: " + viewPath + "");
         }
 
+        getDustEngine().load(cachedTemplateSource);
+    }
+
+    protected boolean isCaching(boolean isRefresh, String cacheKey) {
+        return viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh;
     }
 
     protected String createJsonObject(Map<String, Object> model) {
@@ -155,14 +174,6 @@ public class SimpleDustTemplateView extends JstlView {
      * @return
      */
     protected String renderingView(String templateKey, String json) {
-        // view도 동일하고, JSON도 동일하다면 다시 렌더링하지 않고 저장해둔 값을 사용함
-        /*
-        if (usedCacheView && contentCacheProvider.isCached(templateKey, json)) {
-            return contentCacheProvider.get(templateKey);
-        }
-        */
-
-
         try {
             StringWriter writer = new StringWriter();
 
@@ -170,16 +181,10 @@ public class SimpleDustTemplateView extends JstlView {
             getDustEngine().render(writer, templateKey, json);
 
             String renderedView = new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
-            /*
-            if (viewCacheable) {
-                contentCacheProvider.add(templateKey, json, renderedView);
-            }
-            */
 
-            //handling error
-            if (renderedView.startsWith("Error: Template Not Found:")) {
-                throw new DustViewException(renderedView);
-            }
+            //will throw exception if occurred
+            errorHandler.checkError(templateKey, renderedView);
+
             return renderedView;
         } catch (UnsupportedEncodingException e) {
             throw new DustViewException("Fail to create View Source", e);
@@ -194,16 +199,20 @@ public class SimpleDustTemplateView extends JstlView {
         return false;
     }
 
-    protected void resolvePropertyByViewAttribute() {
-        if (viewTemplateLoader == null && getAttributesMap().get(TEMPLATE_LOADER) != null && getAttributesMap().get(TEMPLATE_LOADER) instanceof DustTemplateLoader) {
+    /**
+     * initializing method.
+     * Caution: Must not call runtime!!
+     */
+    public void initializeViewProperty() {
+        if (getAttributesMap().get(TEMPLATE_LOADER) != null && getAttributesMap().get(TEMPLATE_LOADER) instanceof DustTemplateLoader) {
             setViewTemplateLoader((DustTemplateLoader) getAttributesMap().get(TEMPLATE_LOADER));
         }
 
-        if (!StringUtils.hasText(viewPrefixPath) && getAttributesMap().get(VIEW_PATH_PREFIX) != null && getAttributesMap().get(VIEW_PATH_PREFIX) instanceof String) {
+        if (getAttributesMap().get(VIEW_PATH_PREFIX) != null && getAttributesMap().get(VIEW_PATH_PREFIX) instanceof String) {
             setViewPrefixPath((String) getAttributesMap().get(VIEW_PATH_PREFIX));
         }
 
-        if (!StringUtils.hasText(viewSuffixPath) && getAttributesMap().get(VIEW_PATH_SUFFIX) != null && getAttributesMap().get(VIEW_PATH_SUFFIX) instanceof String) {
+        if (getAttributesMap().get(VIEW_PATH_SUFFIX) != null && getAttributesMap().get(VIEW_PATH_SUFFIX) instanceof String) {
             setViewSuffixPath((String) getAttributesMap().get(VIEW_PATH_SUFFIX));
         }
 
@@ -211,22 +220,22 @@ public class SimpleDustTemplateView extends JstlView {
             setExportViewSourceKey((String) getAttributesMap().get(VIEW_SOURCE));
         }
 
-        if (viewSourceCacheProvider != getAttributesMap().get(CACHE_PROVIDER) && getAttributesMap().get(CACHE_PROVIDER) != null && getAttributesMap().get(CACHE_PROVIDER) instanceof ViewSourceCacheProvider) {
+        if (getAttributesMap().get(CACHE_PROVIDER) != null && getAttributesMap().get(CACHE_PROVIDER) instanceof ViewSourceCacheProvider) {
             setViewSourceCacheProvider((ViewSourceCacheProvider) getAttributesMap().get(CACHE_PROVIDER));
         }
 
         if (getAttributesMap().get(VIEW_CACHEABLE) != null && getAttributesMap().get(VIEW_CACHEABLE) instanceof String) {
-
             String cacheable = (String) getAttributesMap().get(VIEW_CACHEABLE);
             if ("true".equalsIgnoreCase(cacheable) || "false".equalsIgnoreCase(cacheable)) {
                 setViewCacheable(Boolean.valueOf(cacheable.toLowerCase()));
             }
         }
 
-        if (getDustEngine().getDsutJsExtensionFilePath() == null && getAttributesMap().get(DUST_JS_EXTENSION_FILE_PATH) != null && getAttributesMap().get(DUST_JS_EXTENSION_FILE_PATH) instanceof String) {
-            getDustEngine().setDsutJsExtensionFilePath((String) getAttributesMap().get(DUST_JS_EXTENSION_FILE_PATH));
-            getDustEngine().initializeContext();
+        if (getAttributesMap().get(DUST_JS_EXTENSION_FILE_PATH) != null && getAttributesMap().get(DUST_JS_EXTENSION_FILE_PATH) instanceof String) {
+            String filePath = (String) getAttributesMap().get(DUST_JS_EXTENSION_FILE_PATH);
+            getDustEngine().loadExtensionFunction(filePath);
         }
+
     }
 
     protected void addResponseMoreInformation(HttpServletResponse res) {
@@ -248,21 +257,6 @@ public class SimpleDustTemplateView extends JstlView {
         }
     }
 
-    protected String getViewCacheKey(Map<String, ?> model) {
-        Object viewPath = model.get(VIEW_FILE_PATH);
-        if (viewPath != null) {
-            String cacheKey = viewPath + viewSuffixPath;
-            cacheKey = cacheKey.replaceAll("//", "/");
-            if (cacheKey.startsWith("/")) {
-                cacheKey = cacheKey.substring(1);
-            }
-
-            return cacheKey;
-        } else {
-            return "";
-        }
-    }
-
     protected String getDustTemplateKey(Map<String, ?> model) {
         Object templateKey = model.get(TEMPLATE_KEY);
         if (templateKey != null && templateKey instanceof String) {
@@ -272,6 +266,7 @@ public class SimpleDustTemplateView extends JstlView {
         }
     }
 
+    /* -- Overriden -- */
     /*
      * (non-Javadoc)
      *
@@ -282,6 +277,17 @@ public class SimpleDustTemplateView extends JstlView {
     protected boolean isUrlRequired() {
         // Not using url attribute
         return false;
+    }
+
+    @Override
+    protected RequestContext createRequestContext(HttpServletRequest request, HttpServletResponse response, Map<String, Object> model) {
+        return super.createRequestContext(request, response, model);
+    }
+
+    @Override
+    protected void initApplicationContext() throws BeansException {
+        super.initApplicationContext();
+        initializeViewProperty();
     }
 
     /* -- Getter & Setter -- */

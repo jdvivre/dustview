@@ -29,7 +29,7 @@ public class SimpleDustTemplateViewTest {
         attributeMap.put(SimpleDustTemplateView.TEMPLATE_LOADER, mockTemplateLoader);
         v.setAttributesMap(attributeMap);
 
-        v.resolvePropertyByViewAttribute();
+        v.initializeViewProperty();
 
         assertThat(v.getViewTemplateLoader(), CoreMatchers.<DustTemplateLoader>equalTo(mockTemplateLoader));
     }
@@ -44,7 +44,7 @@ public class SimpleDustTemplateViewTest {
         attributeMap.put(SimpleDustTemplateView.VIEW_PATH_SUFFIX, "/markup.js");
         v.setAttributesMap(attributeMap);
 
-        v.resolvePropertyByViewAttribute();
+        v.initializeViewProperty();
 
         assertThat(v.getViewPrefixPath(), is("http://..."));
         assertThat(v.getViewSuffixPath(), is("/markup.js"));
@@ -118,26 +118,6 @@ public class SimpleDustTemplateViewTest {
         */
     }
     
-    @Test
-	public void cacheKey() throws Exception {
-    	
-    	v.setViewSuffixPath("/markup.js");
-    	Map<String, String> model = new HashMap<String, String>();
-    	
-    	model.put(SimpleDustTemplateView.VIEW_FILE_PATH, "path1/path2");
-    	String dustViewCacheKey = v.getViewCacheKey(model);
-    	assertThat("path1/path2/markup.js", is(dustViewCacheKey));
-    	
-    	model.put(SimpleDustTemplateView.VIEW_FILE_PATH, "path1/path2/");
-    	dustViewCacheKey = v.getViewCacheKey(model);
-    	assertThat("path1/path2/markup.js", is(dustViewCacheKey));
-
-    	model.put(SimpleDustTemplateView.VIEW_FILE_PATH, "/path1/path2/");
-    	dustViewCacheKey = v.getViewCacheKey(model);
-    	assertThat("path1/path2/markup.js", is(dustViewCacheKey));
-		
-	}
-
     static class MockTemplateLoader implements DustTemplateLoader {
         @Override
         public String loadTemplate(String templatePath) {
