@@ -91,7 +91,8 @@ public class DustTemplateEngine {
             Reader dustJsHelperReader = new InputStreamReader(dustHelperJsStream, encoding);
 
             Context context = Context.enter();
-            context.setOptimizationLevel(9);
+//            context.setOptimizationLevel(9);
+            context.setOptimizationLevel(-1);
 
             globalScope = context.initStandardObjects();
             context.evaluateReader(globalScope, dustJsReader, dustJsFilePath, dustJsStream.available(), null);
@@ -173,6 +174,7 @@ public class DustTemplateEngine {
             */
 
 //            Scriptable scriptableObject = context.initStandardObjects();
+            context.setOptimizationLevel(-1);
             Function fct = (Function) globalScope.get("dustLoad", globalScope);
             fct.call(context, globalScope, globalScope, new Object[]{compiledSource});
         } catch (JavaScriptException e) {
@@ -215,6 +217,7 @@ public class DustTemplateEngine {
             */
 
 //            Scriptable scriptableObject = context.initStandardObjects();
+            context.setOptimizationLevel(-1);
             Function fct = (Function) globalScope.get("dustRender", globalScope);
             fct.call(context, globalScope, globalScope, new Object[]{templateKey, json, writer});
         } catch (JavaScriptException e) {
