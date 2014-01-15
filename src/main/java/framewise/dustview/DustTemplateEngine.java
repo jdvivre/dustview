@@ -38,7 +38,7 @@ public class DustTemplateEngine {
 
     private static final String DEFAULT_ENCODING = "UTF-8";
 
-    private static Scriptable globalScope;
+    private Scriptable globalScope;
 
     private String compileSourceName = DEFAULT_COMPILE_SOURCE_NAME;
     private String dustJsFilePath = DEFAULT_DUST_JS_FILE_PATH;
@@ -105,7 +105,6 @@ public class DustTemplateEngine {
 
             context.evaluateString(globalScope, NEW_LOADING_SCRIPT, compileSourceName, 0, null);
             context.evaluateString(globalScope, NEW_RENDERING_SCRIPT, compileSourceName, 0, null);
-
 
         } catch (Exception e) {
             logger.error("thrown exception when initialize step!", e);

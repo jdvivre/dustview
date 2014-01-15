@@ -162,12 +162,13 @@ public class SimpleDustTemplateView extends JstlView {
         }
         */
 
-        StringWriter writer = new StringWriter();
-
-        // Rendering by DustEngine
-        getDustEngine().render(writer, templateKey, json);
 
         try {
+            StringWriter writer = new StringWriter();
+
+            // Rendering by DustEngine
+            getDustEngine().render(writer, templateKey, json);
+
             String renderedView = new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
             /*
             if (viewCacheable) {
