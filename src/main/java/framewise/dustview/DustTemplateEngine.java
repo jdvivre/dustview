@@ -25,7 +25,7 @@ public class DustTemplateEngine {
     private static final String DEFAULT_COMPILE_SCRIPT = "(dust.compile(source, templateKey))";
     private static final String DEFAULT_LOAD_SCRIPT = "function dustLoad(source) { dust.loadSource(source); }";
     private static final String DEFAULT_RENDER_SCRIPT =
-            "function dustRender(templateKey,_writer,json,_error) {" +
+            "function dustRender(templateKey,_writer,_error, json) {" +
                     "return dust.render(templateKey,JSON.parse(json)," +
                         "function(err, out){" +
                             "if(out){ _writer.write(out); }" +
@@ -209,7 +209,7 @@ public class DustTemplateEngine {
         try {
             context.setOptimizationLevel(optimizationLevel);
             Function fct = (Function) globalScope.get("dustRender", globalScope);
-            fct.call(context, globalScope, globalScope, new Object[]{templateKey, writer, json, errorWriter});
+            fct.call(context, globalScope, globalScope, new Object[]{templateKey, writer, errorWriter, json});
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when Rendering Dust JS Source", e);
         } finally {
