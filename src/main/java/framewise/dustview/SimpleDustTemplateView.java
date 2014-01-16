@@ -13,7 +13,6 @@ import org.springframework.web.servlet.view.JstlView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -181,17 +180,17 @@ public class SimpleDustTemplateView extends JstlView {
     protected String renderingView(String templateKey, String json) {
         try {
             StringWriter writer = new StringWriter();
+            StringWriter errorWriter = new StringWriter();
 
             // Rendering by DustEngine
-            getDustEngine().render(writer, templateKey, json);
-
-            String renderedView = new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
+            getDustEngine().render(writer, errorWriter, templateKey, json);
 
             //will throw exception if occurred
-            errorHandler.checkError(templateKey, renderedView);
+            errorHandler.checkError(templateKey, errorWriter, viewEncoding);
 
+            String renderedView = new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
             return renderedView;
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
             throw new DustViewException("Fail to create View Source(templateKey: " + templateKey + ")", e);
         }
     }

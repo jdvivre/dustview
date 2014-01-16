@@ -24,7 +24,15 @@ public class DustTemplateEngine {
     private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.0.js";
     private static final String DEFAULT_COMPILE_SCRIPT = "(dust.compile(source, templateKey))";
     private static final String DEFAULT_LOAD_SCRIPT = "function dustLoad(source) { dust.loadSource(source); }";
-    private static final String DEFAULT_RENDER_SCRIPT = "function dustRender(templateKey, json, writer) {return dust.render(templateKey, JSON.parse(json) ,function(err, out){writer.write(out);});}";
+    private static final String DEFAULT_RENDER_SCRIPT =
+            "function dustRender(templateKey,_writer,json,_error) {" +
+                    "return dust.render(templateKey,JSON.parse(json)," +
+                        "function(err, out){" +
+                            "if(out){ _writer.write(out); }" +
+                            "if(err){ _error.write(err); }" +
+                        "}" +
+                    ");" +
+            "}";
 
     private static final String DEFAULT_ENCODING = "UTF-8";
 
@@ -192,15 +200,16 @@ public class DustTemplateEngine {
      * Result is plain text HTML markup, then will write to {@link Writer} object.
      *
      * @param writer
+     * @param errorWriter
      * @param templateKey
      * @param json
      */
-    public void render(Writer writer, String templateKey, String json) {
+    public void render(Writer writer, StringWriter errorWriter, String templateKey, String json) {
         final Context context = Context.enter();
         try {
             context.setOptimizationLevel(optimizationLevel);
             Function fct = (Function) globalScope.get("dustRender", globalScope);
-            fct.call(context, globalScope, globalScope, new Object[]{templateKey, json, writer});
+            fct.call(context, globalScope, globalScope, new Object[]{templateKey, writer, json, errorWriter});
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when Rendering Dust JS Source", e);
         } finally {
@@ -261,4 +270,31 @@ public class DustTemplateEngine {
         this.compileSourceName = compileSourceName;
     }
 
+    public void setOptimizationLevel(int optimizationLevel) {
+        this.optimizationLevel = optimizationLevel;
+    }
+
+    public int getOptimizationLevel() {
+        return optimizationLevel;
+    }
+
+    public String getLoadScript() {
+        return loadScript;
+    }
+
+    public String getRenderScript() {
+        return renderScript;
+    }
+
+    public String getCompileScript() {
+        return compileScript;
+    }
+
+    public String getCompileSourceName() {
+        return compileSourceName;
+    }
+
+    public String getEncoding() {
+        return encoding;
+    }
 }

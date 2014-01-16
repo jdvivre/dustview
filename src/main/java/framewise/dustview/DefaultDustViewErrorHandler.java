@@ -1,14 +1,20 @@
 package framewise.dustview;
 
+import org.springframework.util.StringUtils;
+
+import java.io.StringWriter;
+
 /**
+ * Default implementation for DustViewErrorHandler
+ *
  * @author chanwook
  */
 public class DefaultDustViewErrorHandler implements DustViewErrorHandler {
     @Override
-    public void checkError(String templateKey, String renderedView) {
-        //handling error
-        if (renderedView.startsWith("Error: Template Not Found:")) {
-            throw new DustViewException("Throwing exception when rendering to resource(templateKey: " + templateKey + ")\n caused: " + renderedView);
+    public void checkError(String templateKey, StringWriter errorWriter, String viewEncoding) throws Exception {
+        String errorMessage = new String(errorWriter.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
+        if (StringUtils.hasText(errorMessage)) {
+            throw new DustViewException("Exception thrown when rendering! templatekey: " + templateKey + ", caused by: " + errorMessage);
         }
     }
 }

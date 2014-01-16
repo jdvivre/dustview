@@ -46,7 +46,8 @@ public class DustTemplateEngineTest {
 
 		// render
 		StringWriter writer = new StringWriter();
-		engine.render(writer, "test1", "{}");
+        StringWriter errorWriter = new StringWriter();
+		engine.render(writer, errorWriter, "test1", "{}");
 		assertThat(writer.getBuffer().toString(), is("Hello World!"));
 	}
 
@@ -72,16 +73,17 @@ public class DustTemplateEngineTest {
 
         // render
         StringWriter writer1 = new StringWriter();
-        engine.render(writer1, "test1", "{}");
+        StringWriter errorWriter = new StringWriter();
+        engine.render(writer1, errorWriter, "test1", "{}");
         assertThat(writer1.getBuffer().toString(), is("Hello World!"));
 
         // rerender
         StringWriter writer2 = new StringWriter();
-        engine.render(writer2, "test2", "{}");
+        engine.render(writer2, errorWriter, "test2", "{}");
         assertThat(writer2.getBuffer().toString(), is("Hello World!"));
 
         StringWriter writer3 = new StringWriter();
-        engine.render(writer3, "test1", "{}");
+        engine.render(writer3, errorWriter, "test1", "{}");
         assertThat(writer3.getBuffer().toString(), is("Hello World!"));
 
     }
@@ -101,12 +103,28 @@ public class DustTemplateEngineTest {
 
 		// render
 		StringWriter writer = new StringWriter();
-		engine.render(writer, "test2", "{\"name\":\"chanwook\"}");
+        StringWriter errorWriter = new StringWriter();
+		engine.render(writer, errorWriter, "test2", "{\"name\":\"chanwook\"}");
 		assertThat(writer.getBuffer().toString(), is("Hello chanwook World!"));
 	}
 
 	@Test
-	public void thrownExceptionAtUncorrenctPath() throws Exception {
-		// TODO ..
+	public void templateKeyNotFound() throws Exception {
+        DustTemplateEngine engine = new DustTemplateEngine();
+        String source = "Hello {name} World!";
+        // compile
+        String compiled = engine.compile(source, "test");
+        assertThat(
+                compiled,
+                is("(function(){dust.register(\"test\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx.get(\"name\"),ctx,\"h\").write(\" World!\");}return body_0;})();"));
+
+        // load
+        engine.load(compiled);
+
+        // render
+        StringWriter writer = new StringWriter();
+        StringWriter errorWriter = new StringWriter();
+        engine.render(writer, errorWriter, "not-found", "{\"name\":\"chanwook\"}");
+        assertThat(errorWriter.getBuffer().toString(), is("Error: Template Not Found: not-found"));
 	}
 }

@@ -1,7 +1,11 @@
 package framewise.dustview;
 
+import java.io.StringWriter;
+
 /**
- * Created by chanwook on 2014. 1. 15..
+ * Additional error handler for dust renering result.
+ *
+ * @author chanwook
  */
 public interface DustViewErrorHandler {
 
@@ -9,7 +13,8 @@ public interface DustViewErrorHandler {
      * throw exception if occurred
      *
      * @param templateKey
-     * @param renderedView
+     * @param errorWriter
+     * @param viewEncoding
      */
-    void checkError(String templateKey, String renderedView);
+    void checkError(String templateKey, StringWriter errorWriter, String viewEncoding) throws Exception;
 }
