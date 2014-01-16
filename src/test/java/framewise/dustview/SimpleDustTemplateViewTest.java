@@ -1,16 +1,14 @@
 package framewise.dustview;
 
+import org.hamcrest.CoreMatchers;
+import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+
+import java.util.HashMap;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.hamcrest.CoreMatchers;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 
 /**
@@ -53,31 +51,30 @@ public class SimpleDustTemplateViewTest {
     @Test
     public void sendRefreshParam() {
         MockHttpServletRequest request = new MockHttpServletRequest();
+        String templateKey = "test";
 
-        boolean refreshParam = v.getRefreshParam(request);
+        boolean refreshParam = v.getRefreshParam(templateKey, request);
         assertThat(refreshParam, is(false));
 
         request.setParameter("_refresh", "y");
-        refreshParam = v.getRefreshParam(request);
+        refreshParam = v.getRefreshParam(templateKey, request);
         assertThat(refreshParam, is(true));
 
         request.setParameter("_refresh", "Y");
-        refreshParam = v.getRefreshParam(request);
+        refreshParam = v.getRefreshParam(templateKey, request);
         assertThat(refreshParam, is(true));
 
         request.setParameter("_refresh", "n");
-        refreshParam = v.getRefreshParam(request);
+        refreshParam = v.getRefreshParam(templateKey, request);
         assertThat(refreshParam, is(false));
     }
 
-    @Ignore
     @Test
     public void refreshViewWhenSendParam() {
-        /*
         final String refreshSrc = "<html>refresh</html>";
         final String cacheSrc = "<html>cache</html>";
         final String viewPath = "view1";
-        final String cacheKey = "cachekey1";
+        final String templateKey = "templateKey1";
 
         v.setViewTemplateLoader(new DustTemplateLoader() {
             @Override
@@ -92,32 +89,31 @@ public class SimpleDustTemplateViewTest {
             }
         });
         // new - first call
-        String src = v.loadTemplateSource(viewPath, cacheKey, false);
-        assertThat(src, is(refreshSrc));
+        boolean result = v.loadTemplateSource(templateKey, viewPath, false);
+        assertThat(result, is(false));
 
         // cached src
-        src = v.loadTemplateSource(viewPath, cacheKey, false);
-        assertThat(src, is(cacheSrc));
+        result = v.loadTemplateSource(templateKey, viewPath, false);
+        assertThat(result, is(true));
 
         // new - refresh call
-        src = v.loadTemplateSource(viewPath, cacheKey, true);
-        assertThat(src, is(refreshSrc));
+        result = v.loadTemplateSource(templateKey, viewPath, true);
+        assertThat(result, is(false));
 
         // cached src
-        src = v.loadTemplateSource(viewPath, cacheKey, false);
-        assertThat(src, is(cacheSrc));
+        result = v.loadTemplateSource(templateKey, viewPath, false);
+        assertThat(result, is(true));
 
         // disable cache
         v.setViewCacheable(false);
-        src = v.loadTemplateSource(viewPath, cacheKey, true);
-        assertThat(src, is(refreshSrc));
+        result = v.loadTemplateSource(templateKey, viewPath, true);
+        assertThat(result, is(false));
 
         v.setViewCacheable(false);
-        src = v.loadTemplateSource(viewPath, cacheKey, false);
-        assertThat(src, is(refreshSrc));
-        */
+        result = v.loadTemplateSource(templateKey, viewPath, false);
+        assertThat(result, is(false));
     }
-    
+
     static class MockTemplateLoader implements DustTemplateLoader {
         @Override
         public String loadTemplate(String templatePath) {

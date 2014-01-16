@@ -39,4 +39,10 @@ public interface ViewSourceCacheProvider {
      */
     boolean remove(String key);
 
+    /**
+     * Is need to reload resource when return cached value
+     *
+     * @return true is need it!
+     */
+    boolean isReload();
 }

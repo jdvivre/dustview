@@ -42,4 +42,9 @@ public class PreloadViewSourceCacheProvider implements ViewSourceCacheProvider {
     public boolean remove(String key) {
         return this.cache.remove(key);
     }
+
+    @Override
+    public boolean isReload() {
+        return false;
+    }
 }

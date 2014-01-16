@@ -48,10 +48,26 @@ public class DustTemplateEngine {
      * dust context initialize method. must call before running dust
      */
     public void initializeContext() {
-        InputStream dustJsStream = getDustJsStream(getDustJsFilePath());
-        InputStream dustHelperJsStream = getDustJsStream(getDustJsHelperFilePath());
+        InputStream dustJsStream = null;
+        InputStream dustHelperJsStream = null;
+        try {
+            dustJsStream = getDustJsStream(getDustJsFilePath());
+            dustHelperJsStream = getDustJsStream(getDustJsHelperFilePath());
 
-        loadDustJsEngine(dustJsStream, dustHelperJsStream);
+            loadDustJsEngine(dustJsStream, dustHelperJsStream);
+        } finally {
+            try {
+                if (dustJsStream != null) {
+                    dustJsStream.close();
+                }
+                if (dustHelperJsStream != null) {
+                    dustHelperJsStream.close();
+                }
+            } catch (Exception e) {
+                throw new DustViewException("Throwing exception when initialize step for core engine!", e);
+            }
+        }
+
     }
 
 
@@ -82,13 +98,17 @@ public class DustTemplateEngine {
             context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
 
         } catch (Exception e) {
-            throw new DustViewException("thrown exception when initialize step for core engine!", e);
+            throw new DustViewException("Throwing exception when initialize step for core engine!", e);
         } finally {
             Context.exit();
 
             try {
-                dustJsReader.close();
-                dustJsHelperReader.close();
+                if (dustJsReader != null) {
+                    dustJsReader.close();
+                }
+                if (dustJsHelperReader != null) {
+                    dustJsHelperReader.close();
+                }
             } catch (IOException e) {
                 logger.error("Fail to dust eignen loading!!", e);
                 throw new DustViewException(e);
@@ -98,21 +118,27 @@ public class DustTemplateEngine {
     }
 
     public void loadExtensionFunction(String filePath) {
-        Reader dustJsExtentionReader = null;
+        Reader dustJsExtensionReader = null;
+        InputStream stream = null;
         Context context = Context.enter();
         try {
-            InputStream stream = getDustJsStream(filePath);
-            dustJsExtentionReader = new InputStreamReader(stream, encoding);
-            context.evaluateReader(globalScope, dustJsExtentionReader, filePath, stream.available(), null);
+            stream = getDustJsStream(filePath);
+            dustJsExtensionReader = new InputStreamReader(stream, encoding);
+            context.evaluateReader(globalScope, dustJsExtensionReader, filePath, stream.available(), null);
         } catch (Exception e) {
             throw new DustViewException("thrown exception when initialize step for extension!", e);
         } finally {
             Context.exit();
 
             try {
-                dustJsExtentionReader.close();
+                if (stream != null) {
+                    stream.close();
+                }
+                if (dustJsExtensionReader != null) {
+                    dustJsExtensionReader.close();
+                }
             } catch (IOException e) {
-                logger.error("Fail to dust extension file!!", e);
+                logger.error("Fail to load dust extension file!!", e);
                 throw new DustViewException(e);
             }
         }

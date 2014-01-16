@@ -8,7 +8,7 @@ public class DefaultDustViewErrorHandler implements DustViewErrorHandler {
     public void checkError(String templateKey, String renderedView) {
         //handling error
         if (renderedView.startsWith("Error: Template Not Found:")) {
-            throw new DustViewException("Throwed exception when redering to resource(templateKey: " + templateKey + ")\n caused: " + renderedView);
+            throw new DustViewException("Throwing exception when rendering to resource(templateKey: " + templateKey + ")\n caused: " + renderedView);
         }
     }
 }

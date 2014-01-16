@@ -35,7 +35,6 @@ public class SimpleDustTemplateView extends JstlView {
     public static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
     public static final String VIEW_FILE_PATH = "_VIEW_FILE_PATH";
     public static final String CONTENT_KEY = "_CONTENT_KEY";
-    public static final String CONTENT_JSON = "_CONTENT_JSON";
 
     public static final String TEMPLATE_LOADER = "_TEMPLATE_LOADER";
     public static final String VIEW_PATH_PREFIX = "_VIEW_PATH_PREFIX";
@@ -75,14 +74,19 @@ public class SimpleDustTemplateView extends JstlView {
         // Compose Variable for Dust View
         String templateKey = getDustTemplateKey(mergedOutputModel);
         if (!StringUtils.hasText(templateKey)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("TemplateKey not found! Then pass to next view.");
+            }
             return mergedOutputModel;
         }
 
         // create JSON Object that used to model at Dust VIEW
-        String json = createJsonObject(mergedOutputModel);
+        String json = createJsonObject(templateKey, mergedOutputModel);
 
         // load template source
-        loadTemplateSource(null, request, mergedOutputModel);
+        boolean isRefresh = getRefreshParam(templateKey, request);
+        String viewPath = getViewPath(mergedOutputModel);
+        boolean cached = loadTemplateSource(templateKey, viewPath, isRefresh);
 
         // rendering view
         String renderView = renderingView(templateKey, json);
@@ -90,8 +94,8 @@ public class SimpleDustTemplateView extends JstlView {
         addResponseMoreInformation(res);
 
         if (logger.isDebugEnabled()) {
-//            logger.debug("Dust View Rendering Result = TemplateKey: " + templateKey + ", Template File Path: " + viewPath +
-//                    ", JSON: " + json + ", View Source: " + viewSource);
+            logger.debug("Dust View Rendering Result = TemplateKey: " + templateKey + ", Template File Path: " + viewPath +
+                    ", Using Compiled HTML cache?: " + cached + ", JSON: " + json);
         }
 
         bindingResult(mergedOutputModel, json, renderView);
@@ -109,39 +113,41 @@ public class SimpleDustTemplateView extends JstlView {
     protected void bindingResult(Map<String, Object> mergedOutputModel, String json, String renderView) {
         mergedOutputModel.put(this.exportViewSourceKey, renderView);
         mergedOutputModel.put(this.exportJsonKey, json);
+        //임시..
+        mergedOutputModel.put("_CONTENT_JSON", json);
     }
 
-    protected void loadTemplateSource(String templateKey, HttpServletRequest request, Map<String, Object> mergedOutputModel) {
-        boolean isRefresh = getRefreshParam(request);
-        String viewPath = getViewPath(mergedOutputModel);
+    protected boolean loadTemplateSource(String templateKey, String viewPath, boolean isRefresh) {
+        if (isCaching(isRefresh, templateKey)) {
+            String cachedTemplateSource = viewSourceCacheProvider.get(templateKey);
 
-        loadTemplateSource(isRefresh, viewPath, templateKey);
-    }
-
-    protected void loadTemplateSource(boolean isRefresh, String viewPath, String cacheKey) {
-        if (isCaching(isRefresh, cacheKey)) {
-            String cachedTemplateSource = viewSourceCacheProvider.get(cacheKey);
             // load to script engine when had to resource
-            if (StringUtils.hasText(cachedTemplateSource)) {
-                loadResourceToScriptEngine(viewPath, cachedTemplateSource);
+            if (viewSourceCacheProvider.isReload()) {
+                loadResourceToScriptEngine(templateKey, viewPath, cachedTemplateSource);
             }
 
-            logger.debug("using cached view resource");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Using cached view resource(templatekey: " + templateKey + ", viewPath: " + viewPath + ")");
+            }
+            return true;
         } else {
             String templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
-            logger.debug("load new view resource");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Load new view resource(templatekey: " + templateKey + ", viewPath: " + viewPath + ")");
+            }
 
             if (viewCacheable) {
-                viewSourceCacheProvider.add(cacheKey, templateSource);
+                viewSourceCacheProvider.add(templateKey, templateSource);
             }
-            loadResourceToScriptEngine(viewPath, templateSource);
+            loadResourceToScriptEngine(templateKey, viewPath, templateSource);
+            return false;
         }
     }
 
-    private void loadResourceToScriptEngine(String viewPath, String cachedTemplateSource) {
+    private void loadResourceToScriptEngine(String templateKey, String viewPath, String cachedTemplateSource) {
         if (logger.isInfoEnabled()) {
-            logger.info("Compiled resource load to script engine!!(target: " + viewPath + "");
+            logger.info("Compiled resource load to script engine!!(templateKey: " + templateKey + ", viewPath: " + viewPath + ")");
         }
 
         getDustEngine().load(cachedTemplateSource);
@@ -151,18 +157,17 @@ public class SimpleDustTemplateView extends JstlView {
         return viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh;
     }
 
-    protected String createJsonObject(Map<String, Object> model) {
+    protected String createJsonObject(String templateKey, Map<String, Object> model) {
         Object jsonParam = model.get(CONTENT_KEY);
-        if (jsonParam == null) {
-            throw new IllegalArgumentException("JSON Object must require! param name is " + CONTENT_KEY);
+        if (StringUtils.hasText(templateKey) && jsonParam == null) {
+            throw new IllegalArgumentException("JSON Object must require! param name is " + CONTENT_KEY + ". (request templteKey: " + templateKey + ")");
         }
 
         try {
             String json = getJsonMapper().writeValueAsString(jsonParam);
-            model.put(CONTENT_JSON, json);
             return json;
         } catch (JsonProcessingException e) {
-            throw new DustViewException("Fail to create JSON Object[message: " + e.getMessage() + "]", e);
+            throw new DustViewException("Fail to create JSON Object[templateKey: " + templateKey + ", message: " + e.getMessage() + "]", e);
         }
     }
 
@@ -187,13 +192,16 @@ public class SimpleDustTemplateView extends JstlView {
 
             return renderedView;
         } catch (UnsupportedEncodingException e) {
-            throw new DustViewException("Fail to create View Source", e);
+            throw new DustViewException("Fail to create View Source(templateKey: " + templateKey + ")", e);
         }
     }
 
-    boolean getRefreshParam(HttpServletRequest request) {
+    boolean getRefreshParam(String templateKey, HttpServletRequest request) {
         String param = request.getParameter("_refresh");
         if (param != null && "Y".equals(param.toUpperCase())) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Request to refresh cached compiled resource!(templateKey: " + templateKey + ")");
+            }
             return true;
         }
         return false;
@@ -365,5 +373,17 @@ public class SimpleDustTemplateView extends JstlView {
 
     public void setExportJsonKey(String exportJsonKey) {
         this.exportJsonKey = exportJsonKey;
+    }
+
+    public ViewSourceCacheProvider getViewSourceCacheProvider() {
+        return viewSourceCacheProvider;
+    }
+
+    public DustViewErrorHandler getErrorHandler() {
+        return errorHandler;
+    }
+
+    public void setErrorHandler(DustViewErrorHandler errorHandler) {
+        this.errorHandler = errorHandler;
     }
 }

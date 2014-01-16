@@ -56,4 +56,9 @@ public class InMemoryViewSourceCacheProvider implements ViewSourceCacheProvider 
             return false;
         }
     }
+
+    @Override
+    public boolean isReload() {
+        return true;
+    }
 }
