@@ -208,6 +208,7 @@ public class DustTemplateEngine {
         final Context context = Context.enter();
         try {
             context.setOptimizationLevel(optimizationLevel);
+
             Function fct = (Function) globalScope.get("dustRender", globalScope);
             fct.call(context, globalScope, globalScope, new Object[]{templateKey, writer, errorWriter, json});
         } catch (JavaScriptException e) {

@@ -164,6 +164,10 @@ public class SimpleDustTemplateView extends JstlView {
 
         try {
             String json = getJsonMapper().writeValueAsString(jsonParam);
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("Generate JSON text(templateKey: " + templateKey + ", text: " + json + ")");
+            }
             return json;
         } catch (JsonProcessingException e) {
             throw new DustViewException("Fail to create JSON Object[templateKey: " + templateKey + ", message: " + e.getMessage() + "]", e);
