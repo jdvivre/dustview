@@ -21,7 +21,7 @@ public class DustTemplateEngine {
 
     private static final String DEFAULT_COMPILE_SOURCE_NAME = "ServerSideDustCompiler";
     private static final String DEFAULT_DUST_JS_FILE_PATH = "/dust/dust-full-1.1.1.js";
-    private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.0.js";
+    private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.1.js";
     private static final String DEFAULT_COMPILE_SCRIPT = "(dust.compile(source, templateKey))";
     private static final String DEFAULT_LOAD_SCRIPT = "function dustLoad(source) { dust.loadSource(source); }";
     private static final String DEFAULT_RENDER_SCRIPT =

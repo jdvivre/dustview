@@ -34,6 +34,7 @@ public class SimpleDustTemplateView extends JstlView {
     public static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
     public static final String VIEW_FILE_PATH = "_VIEW_FILE_PATH";
     public static final String CONTENT_KEY = "_CONTENT_KEY";
+    public static final String CONTENT_TEXT_KEY = "_CONTENT_TEXT_KEY";
 
     public static final String TEMPLATE_LOADER = "_TEMPLATE_LOADER";
     public static final String VIEW_PATH_PREFIX = "_VIEW_PATH_PREFIX";
@@ -80,7 +81,7 @@ public class SimpleDustTemplateView extends JstlView {
         }
 
         // create JSON Object that used to model at Dust VIEW
-        String json = createJsonObject(templateKey, mergedOutputModel);
+        String json = createJson(templateKey, mergedOutputModel);
 
         // load template source
         boolean isRefresh = getRefreshParam(templateKey, request);
@@ -156,12 +157,30 @@ public class SimpleDustTemplateView extends JstlView {
         return viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh;
     }
 
-    protected String createJsonObject(String templateKey, Map<String, Object> model) {
+    protected String createJson(String templateKey, Map<String, Object> model) {
+        // first tyr for JSON Object!
         Object jsonParam = model.get(CONTENT_KEY);
-        if (StringUtils.hasText(templateKey) && jsonParam == null) {
-            throw new IllegalArgumentException("JSON Object must require! param name is " + CONTENT_KEY + ". (request templteKey: " + templateKey + ")");
+        if (StringUtils.hasText(templateKey) && jsonParam != null) {
+            return createJsonFromObject(templateKey, jsonParam);
         }
 
+        // second try for JSON Text!
+        Object jsonTextParam = model.get(CONTENT_TEXT_KEY);
+        if (StringUtils.hasText(templateKey) && jsonTextParam != null) {
+            return createJsonFromText(templateKey, jsonTextParam);
+        }
+        throw new IllegalArgumentException("JSON content must require! (request templteKey: " + templateKey + ")");
+    }
+
+    protected String createJsonFromText(String templateKey, Object jsonTextParam) {
+        if (jsonTextParam instanceof String) {
+            return (String) jsonTextParam;
+        } else {
+            throw new IllegalArgumentException("JSON Text content must java.lang.String type! (request templteKey: " + templateKey + ")");
+        }
+    }
+
+    protected String createJsonFromObject(String templateKey, Object jsonParam) {
         try {
             String json = getJsonMapper().writeValueAsString(jsonParam);
 
