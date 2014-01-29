@@ -17,12 +17,10 @@ public class InMemoryViewSourceCacheProvider implements ViewSourceCacheProvider 
 
     private Map<String, String> cache = new HashMap<String, String>();
 
-    @Override
     public boolean isCached(String key) {
         return cache.containsKey(key);
     }
 
-    @Override
     public String get(String key) {
         if (logger.isDebugEnabled()) {
             logger.debug("Read dust compiled resource in cache!(key: " + key + ")");
@@ -30,7 +28,6 @@ public class InMemoryViewSourceCacheProvider implements ViewSourceCacheProvider 
         return cache.get(key);
     }
 
-    @Override
     public void add(String key, String templateSource) {
         if (logger.isDebugEnabled()) {
             logger.debug("Add dust compiled resource to in-memory cache!(key: " + key + ", value: " + templateSource);
@@ -38,7 +35,6 @@ public class InMemoryViewSourceCacheProvider implements ViewSourceCacheProvider 
         cache.put(key, templateSource);
     }
 
-    @Override
     public boolean remove(String key) {
         if (isCached(key)) {
             cache.remove(key);
@@ -55,10 +51,5 @@ public class InMemoryViewSourceCacheProvider implements ViewSourceCacheProvider 
 
             return false;
         }
-    }
-
-    @Override
-    public boolean isReload() {
-        return true;
     }
 }

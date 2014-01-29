@@ -28,7 +28,7 @@ public class DustTemplateEngineTest {
 		// Load Dust Helper Js file
 		InputStream dustJsHelperFileStream = engine.getDustJsStream(engine.getDustJsHelperFilePath());
 		assertThat(dustJsHelperFileStream, notNullValue());
-		assertThat(dustJsHelperFileStream.available(), is(18324));
+		assertThat(dustJsHelperFileStream.available(), is(19780));
 	}
 
 	@Test
@@ -42,7 +42,7 @@ public class DustTemplateEngineTest {
 				is("(function(){dust.register(\"test1\",body_0);function body_0(chk,ctx){return chk.write(\"Hello World!\");}return body_0;})();"));
 
 		// load
-		engine.load(compiled);
+		engine.load("t1", compiled);
 
 		// render
 		StringWriter writer = new StringWriter();
@@ -68,8 +68,8 @@ public class DustTemplateEngineTest {
                 is("(function(){dust.register(\"test2\",body_0);function body_0(chk,ctx){return chk.write(\"Hello World!\");}return body_0;})();"));
 
         // load
-        engine.load(compiled1);
-        engine.load(compiled2);
+        engine.load("t1", compiled1);
+        engine.load("t1", compiled2);
 
         // render
         StringWriter writer1 = new StringWriter();
@@ -99,7 +99,7 @@ public class DustTemplateEngineTest {
 				is("(function(){dust.register(\"test2\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx.get(\"name\"),ctx,\"h\").write(\" World!\");}return body_0;})();"));
 
 		// load
-		engine.load(compiled);
+		engine.load("t1", compiled);
 
 		// render
 		StringWriter writer = new StringWriter();
@@ -119,7 +119,7 @@ public class DustTemplateEngineTest {
                 is("(function(){dust.register(\"test\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx.get(\"name\"),ctx,\"h\").write(\" World!\");}return body_0;})();"));
 
         // load
-        engine.load(compiled);
+        engine.load("t1", compiled);
 
         // render
         StringWriter writer = new StringWriter();

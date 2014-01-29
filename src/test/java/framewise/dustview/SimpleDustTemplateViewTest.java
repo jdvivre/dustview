@@ -114,6 +114,60 @@ public class SimpleDustTemplateViewTest {
         assertThat(result, is(false));
     }
 
+    @Test
+    public void loadTemplateRealAndCache() {
+        DustTemplateEngine e = new DustTemplateEngine();
+
+        String key1 = "t1";
+        String source1 = "<html>1</html>";
+        String key2 = "t2";
+        String source2 = "<html>2</html>";
+        String key3 = "t3";
+        String source3 = "<html>3</html>";
+        boolean result = e.load(key1, source1);
+        assertThat(true, is(result));
+        result = e.load(key1, source1);
+        assertThat(false, is(result));//이제부터는 캐시!
+        result = e.load(key1, source1);
+        assertThat(false, is(result));
+        result = e.load(key1, source1);
+        assertThat(false, is(result));
+        result = e.load(key1, source1);
+        assertThat(false, is(result));
+        result = e.load(key1, source1);
+        assertThat(false, is(result));
+        result = e.load(key1, source1);
+        assertThat(false, is(result));
+        result = e.load(key1, "<html>1</html>");
+        assertThat(false, is(result));
+        result = e.load(key1, "<html>1</html>");
+        assertThat(false, is(result));
+
+        // 두 번째 view
+        result = e.load(key2, source2);
+        assertThat(true, is(result));
+        result = e.load(key2, source2);
+        assertThat(false, is(result));
+        result = e.load(key2, source2);
+        assertThat(false, is(result));
+        result = e.load(key2, "<html>2</html>");
+        assertThat(false, is(result));
+        result = e.load(key2, "<html>2</html>");
+        assertThat(false, is(result));
+
+        // 세 번째 view
+        result = e.load(key3, source3);
+        assertThat(true, is(result));
+        result = e.load(key3, source3);
+        assertThat(false, is(result));
+        result = e.load(key3, source3);
+        assertThat(false, is(result));
+        result = e.load(key3, "<html>3</html>");
+        assertThat(false, is(result));
+        result = e.load(key3, "<html>3</html>");
+        assertThat(false, is(result));
+    }
+
     static class MockTemplateLoader implements DustTemplateLoader {
         @Override
         public String loadTemplate(String templatePath) {

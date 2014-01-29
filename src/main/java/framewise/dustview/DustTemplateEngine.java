@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Support server-side dust rendering Function. This class load by Rhino JavaScript Engine.
@@ -16,9 +18,9 @@ import java.io.*;
  */
 public class DustTemplateEngine {
 
-    private static final int DEFAULT_OPTIMIZATION_LEVEL = -1;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private static final int DEFAULT_OPTIMIZATION_LEVEL = -1;
     private static final String DEFAULT_COMPILE_SOURCE_NAME = "ServerSideDustCompiler";
     private static final String DEFAULT_DUST_JS_FILE_PATH = "/dust/dust-full-1.1.1.js";
     private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.1.js";
@@ -27,12 +29,12 @@ public class DustTemplateEngine {
     private static final String DEFAULT_RENDER_SCRIPT =
             "function dustRender(templateKey,_writer,_error, json) {" +
                     "return dust.render(templateKey,JSON.parse(json)," +
-                        "function(err, out){" +
-                            "if(out){ _writer.write(out); }" +
-                            "if(err){ _error.write(err); }" +
-                        "}" +
+                    "function(err, out){" +
+                    "if(out){ _writer.write(out); }" +
+                    "if(err){ _error.write(err); }" +
+                    "}" +
                     ");" +
-            "}";
+                    "}";
 
     private static final String DEFAULT_ENCODING = "UTF-8";
 
@@ -47,6 +49,8 @@ public class DustTemplateEngine {
     private String renderScript = DEFAULT_RENDER_SCRIPT;
     // value: -1 ~ 9
     private int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
+
+    private Map<String, String> compiledSourceCache = new HashMap<String, String>();
 
     public DustTemplateEngine() {
         initializeContext();
@@ -180,19 +184,44 @@ public class DustTemplateEngine {
     /**
      * Load Compiled Markup Source to JavaScript Object
      *
+     * @param templateKey
      * @param compiledSource load target HTML Markup
      */
-    public void load(String compiledSource) {
+    public boolean load(String templateKey, String compiledSource) {
+        if (isLoad(templateKey, compiledSource)) {
+            if (logger.isDebugEnabled()) {
+                logger.info("Not load to browser engine (because using compiled source cache!! (templateKey: " + templateKey + ")");
+            }
+            return false;
+        }
+
         final Context context = Context.enter();
         try {
+            if (logger.isInfoEnabled()) {
+                logger.info("Compiled resource load to script engine!! (templateKey: " + templateKey + ")");
+            }
+
             context.setOptimizationLevel(optimizationLevel);
             Function fct = (Function) globalScope.get("dustLoad", globalScope);
             fct.call(context, globalScope, globalScope, new Object[]{compiledSource});
+
+            if (logger.isInfoEnabled()) {
+                logger.info("Add to compiled resource to cache!! (templateKey: " + templateKey + ")");
+            }
+            compiledSourceCache.put(templateKey, compiledSource);
+            return true;
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when load Dust JS Source", e);
         } finally {
             Context.exit();
         }
+    }
+
+    protected boolean isLoad(String templateKey, String compiledSource) {
+        if (compiledSourceCache.containsKey(templateKey) && compiledSourceCache.containsValue(compiledSource)) {
+            return true;
+        }
+        return false;
     }
 
     /**

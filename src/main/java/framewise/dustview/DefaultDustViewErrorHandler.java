@@ -10,7 +10,6 @@ import java.io.StringWriter;
  * @author chanwook
  */
 public class DefaultDustViewErrorHandler implements DustViewErrorHandler {
-    @Override
     public void checkError(String templateKey, StringWriter errorWriter, String viewEncoding) throws Exception {
         String errorMessage = new String(errorWriter.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
         if (StringUtils.hasText(errorMessage)) {

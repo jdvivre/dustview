@@ -25,7 +25,6 @@ public class SimpleDustTemplateView extends JstlView {
 
     private final Logger logger = LoggerFactory.getLogger(SimpleDustTemplateView.class);
 
-    public static final String VIEW_PATH_OVERRIDE = "_VIEW_PATH_OVERRIDE";
     public static final String DEFAULT_VIEW_ENCODING = "UTF-8";
     public static final String DEFAULT_EXPORT_VIEW_SOURCE_KEY = "_view";
     public static final String DEFAULT_EXPORT_JSON_KEY = "_json";
@@ -33,6 +32,9 @@ public class SimpleDustTemplateView extends JstlView {
 
     public static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
     public static final String VIEW_FILE_PATH = "_VIEW_FILE_PATH";
+    public static final String VIEW_PATH_OVERRIDE = "_VIEW_PATH_OVERRIDE";
+    public static final String VIEW_PATH_KEY = "_VIEW_PATH_KEY";
+
     public static final String CONTENT_KEY = "_CONTENT_KEY";
     public static final String CONTENT_TEXT_KEY = "_CONTENT_TEXT_KEY";
 
@@ -53,11 +55,12 @@ public class SimpleDustTemplateView extends JstlView {
     private String exportJsonKey = DEFAULT_EXPORT_JSON_KEY;
     private String viewPrefixPath = "";
     private String viewSuffixPath = "";
-    private ViewSourceCacheProvider viewSourceCacheProvider = new PreloadViewSourceCacheProvider();
+    private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
 
     private DustViewErrorHandler errorHandler = new DefaultDustViewErrorHandler();
 
     private boolean viewCacheable = true;
+    private boolean mergePath = true;
 
     /**
      * Default Constructor
@@ -86,7 +89,7 @@ public class SimpleDustTemplateView extends JstlView {
         // load template source
         boolean isRefresh = getRefreshParam(templateKey, request);
         String viewPath = getViewPath(mergedOutputModel);
-        boolean cached = loadTemplateSource(templateKey, viewPath, isRefresh);
+        loadTemplateSource(templateKey, viewPath, isRefresh);
 
         // rendering view
         String renderView = renderingView(templateKey, json);
@@ -95,7 +98,7 @@ public class SimpleDustTemplateView extends JstlView {
 
         if (logger.isDebugEnabled()) {
             logger.debug("Dust View Rendering Result = TemplateKey: " + templateKey + ", Template File Path: " + viewPath +
-                    ", Using Compiled HTML cache?: " + cached + ", JSON: " + json);
+                    ", JSON: " + json);
         }
 
         bindingResult(mergedOutputModel, json, renderView);
@@ -118,39 +121,32 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected boolean loadTemplateSource(String templateKey, String viewPath, boolean isRefresh) {
+        String templateSource = null;
+        boolean useCache = false;
         if (isCaching(isRefresh, templateKey)) {
-            String cachedTemplateSource = viewSourceCacheProvider.get(templateKey);
-
-            // load to script engine when had to resource
-            if (viewSourceCacheProvider.isReload()) {
-                loadResourceToScriptEngine(templateKey, viewPath, cachedTemplateSource);
-            }
+            templateSource = viewSourceCacheProvider.get(templateKey);
 
             if (logger.isDebugEnabled()) {
                 logger.debug("Using cached view resource(templatekey: " + templateKey + ", viewPath: " + viewPath + ")");
             }
-            return true;
+            useCache = true;
         } else {
-            String templateSource = viewTemplateLoader.loadTemplate(viewPath);
+            templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
             if (logger.isDebugEnabled()) {
-                logger.debug("Load new view resource(templatekey: " + templateKey + ", viewPath: " + viewPath + ")");
+                logger.debug("Load new view resource (templatekey: " + templateKey + ", viewPath: " + viewPath + ")");
             }
 
             if (viewCacheable) {
                 viewSourceCacheProvider.add(templateKey, templateSource);
             }
-            loadResourceToScriptEngine(templateKey, viewPath, templateSource);
-            return false;
         }
+        loadResourceToScriptEngine(templateKey, viewPath, templateSource);
+        return useCache;
     }
 
     private void loadResourceToScriptEngine(String templateKey, String viewPath, String cachedTemplateSource) {
-        if (logger.isInfoEnabled()) {
-            logger.info("Compiled resource load to script engine!!(templateKey: " + templateKey + ", viewPath: " + viewPath + ")");
-        }
-
-        getDustEngine().load(cachedTemplateSource);
+        getDustEngine().load(templateKey, cachedTemplateSource);
     }
 
     protected boolean isCaching(boolean isRefresh, String cacheKey) {
@@ -275,16 +271,41 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected String getViewPath(Map<String, ?> model) {
+        //TODO chain 방식으로 개선
+        //Case 1. full view path
         Object viewPath = model.get(VIEW_PATH_OVERRIDE);
         if (viewPath != null) {
             return (String) viewPath;
         }
+        // Case 2. merge view path with prefix, suffix
         viewPath = model.get(VIEW_FILE_PATH);
         if (viewPath != null) {
-            return viewPrefixPath + viewPath + viewSuffixPath;
-        } else {
-            throw new IllegalArgumentException("View file path must require! param name is " + VIEW_FILE_PATH);
+            return mergeViewPath(viewPath);
         }
+
+        // Case 3. view path in properties
+        Object viewPathKey = model.get(VIEW_PATH_KEY);
+        if (viewPathKey != null && viewPathKey instanceof String) {
+            viewPath = resolveViewPathInProperties((String) viewPathKey);
+            return (String) viewPath;
+        }
+        throw new IllegalArgumentException("View file path must require! param name is " + VIEW_FILE_PATH);
+    }
+
+    protected Object resolveViewPathInProperties(String viewPathKey) {
+        String viewPath = super.getApplicationContext().getEnvironment().getProperty(viewPathKey);
+
+        if (!StringUtils.hasText(viewPath)) {
+            throw new IllegalArgumentException("Not found view path with '" + viewPathKey + "'! Check properties file.");
+        }
+        return mergeViewPath(viewPath);
+    }
+
+    private String mergeViewPath(Object viewPath) {
+        if (mergePath) {
+            return viewPrefixPath + viewPath + viewSuffixPath;
+        }
+        return (String) viewPath;
     }
 
     protected String getDustTemplateKey(Map<String, ?> model) {
@@ -407,5 +428,13 @@ public class SimpleDustTemplateView extends JstlView {
 
     public void setErrorHandler(DustViewErrorHandler errorHandler) {
         this.errorHandler = errorHandler;
+    }
+
+    public boolean isMergePath() {
+        return mergePath;
+    }
+
+    public void setMergePath(boolean mergePath) {
+        this.mergePath = mergePath;
     }
 }
