@@ -62,7 +62,7 @@ Server-Side Dust Rendering Support Library
                 HashMap<String, Object> attributes = new HashMap<String, Object>();
                 HttpConnectDustTemplateLoader dustTemplateLoader = new HttpConnectDustTemplateLoader();
                 attributes.put(SimpleDustTemplateView.TEMPLATE_LOADER, dustTemplateLoader);
-                attributes.put(SimpleDustTemplateView.VIEW_PATH_PREFIX, "http://soopul.com/mullae/");
+                attributes.put(SimpleDustTemplateView.VIEW_PATH_PREFIX, "http://image.server/ui/");
                 attributes.put(SimpleDustTemplateView.VIEW_PATH_SUFFIX, "/markup.js");
                 attributes.put(SimpleDustTemplateView.VIEW_CACHEABLE, "false");
                 viewResolver.setAttributesMap(attributes);
