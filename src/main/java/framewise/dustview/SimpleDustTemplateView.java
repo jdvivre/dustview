@@ -28,7 +28,9 @@ public class SimpleDustTemplateView extends JstlView {
     public static final String DEFAULT_VIEW_ENCODING = "UTF-8";
     public static final String DEFAULT_EXPORT_VIEW_SOURCE_KEY = "_view";
     public static final String DEFAULT_EXPORT_JSON_KEY = "_json";
-    public static final String DUST_JS_EXTENSION_FILE_PATH = "_EXTENSION_JS_FILE_PATH";
+    public static final String DUST_JS_CORE_FILE_PATH = "_DUST_JS_CORE_FILE_PATH";
+    public static final String DUST_JS_HELPER_FILE_PATH = "_DUST_JS_HELPER_FILE_PATH";
+    public static final String DUST_JS_EXTENSION_FILE_PATH = "_DUST_EXTENSION_JS_FILE_PATH";
 
     public static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
     public static final String VIEW_FILE_PATH = "_VIEW_FILE_PATH";
@@ -55,12 +57,16 @@ public class SimpleDustTemplateView extends JstlView {
     private String exportJsonKey = DEFAULT_EXPORT_JSON_KEY;
     private String viewPrefixPath = "";
     private String viewSuffixPath = "";
+
+    private boolean viewCacheable = true;
+    private boolean mergePath = true;
+
     private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
 
     private DustViewErrorHandler errorHandler = new DefaultDustViewErrorHandler();
 
-    private boolean viewCacheable = true;
-    private boolean mergePath = true;
+    private DustViewInitializer initializer = new SimpleDustViewInitializer();
+
 
     /**
      * Default Constructor
@@ -225,45 +231,6 @@ public class SimpleDustTemplateView extends JstlView {
         return false;
     }
 
-    /**
-     * initializing method.
-     * Caution: Must not call runtime!!
-     */
-    public void initializeViewProperty() {
-        if (getAttributesMap().get(TEMPLATE_LOADER) != null && getAttributesMap().get(TEMPLATE_LOADER) instanceof DustTemplateLoader) {
-            setViewTemplateLoader((DustTemplateLoader) getAttributesMap().get(TEMPLATE_LOADER));
-        }
-
-        if (getAttributesMap().get(VIEW_PATH_PREFIX) != null && getAttributesMap().get(VIEW_PATH_PREFIX) instanceof String) {
-            setViewPrefixPath((String) getAttributesMap().get(VIEW_PATH_PREFIX));
-        }
-
-        if (getAttributesMap().get(VIEW_PATH_SUFFIX) != null && getAttributesMap().get(VIEW_PATH_SUFFIX) instanceof String) {
-            setViewSuffixPath((String) getAttributesMap().get(VIEW_PATH_SUFFIX));
-        }
-
-        if (getAttributesMap().get(VIEW_SOURCE) != null && getAttributesMap().get(VIEW_SOURCE) instanceof String) {
-            setExportViewSourceKey((String) getAttributesMap().get(VIEW_SOURCE));
-        }
-
-        if (getAttributesMap().get(CACHE_PROVIDER) != null && getAttributesMap().get(CACHE_PROVIDER) instanceof ViewSourceCacheProvider) {
-            setViewSourceCacheProvider((ViewSourceCacheProvider) getAttributesMap().get(CACHE_PROVIDER));
-        }
-
-        if (getAttributesMap().get(VIEW_CACHEABLE) != null && getAttributesMap().get(VIEW_CACHEABLE) instanceof String) {
-            String cacheable = (String) getAttributesMap().get(VIEW_CACHEABLE);
-            if ("true".equalsIgnoreCase(cacheable) || "false".equalsIgnoreCase(cacheable)) {
-                setViewCacheable(Boolean.valueOf(cacheable.toLowerCase()));
-            }
-        }
-
-        if (getAttributesMap().get(DUST_JS_EXTENSION_FILE_PATH) != null && getAttributesMap().get(DUST_JS_EXTENSION_FILE_PATH) instanceof String) {
-            String filePath = (String) getAttributesMap().get(DUST_JS_EXTENSION_FILE_PATH);
-            getDustEngine().loadExtensionFunction(filePath);
-        }
-
-    }
-
     protected void addResponseMoreInformation(HttpServletResponse res) {
         res.addHeader("Accept-Charset", viewEncoding);
         res.setContentType(MediaType.TEXT_HTML_VALUE + ";charset=" + viewEncoding);
@@ -335,10 +302,15 @@ public class SimpleDustTemplateView extends JstlView {
         return super.createRequestContext(request, response, model);
     }
 
+    /**
+     * Initialzing View property (for DustEngine config)
+     *
+     * @throws BeansException
+     */
     @Override
     protected void initApplicationContext() throws BeansException {
         super.initApplicationContext();
-        initializeViewProperty();
+        initializer.initializeViewProperty(getAttributesMap(), this);
     }
 
     /* -- Getter & Setter -- */
@@ -436,5 +408,13 @@ public class SimpleDustTemplateView extends JstlView {
 
     public void setMergePath(boolean mergePath) {
         this.mergePath = mergePath;
+    }
+
+    public DustViewInitializer getInitializer() {
+        return initializer;
+    }
+
+    public void setInitializer(DustViewInitializer initializer) {
+        this.initializer = initializer;
     }
 }
