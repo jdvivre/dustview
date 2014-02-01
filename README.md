@@ -31,9 +31,28 @@ Server-Side Dust Rendering Support Library
         @ComponentScan(basePackages = {"packageName"}, useDefaultFilters = false,
                 includeFilters = {@ComponentScan.Filter(value = {Controller.class})})
         public class WebContextConfig extends WebMvcConfigurerAdapter {
+            @Bean
+            public ViewResolver getCnvr() {
+                ContentNegotiatingViewResolver viewResolver = new ContentNegotiatingViewResolver();
         
+                // Setting to ViewResolver List
+                ArrayList<ViewResolver> viewResolvers = new ArrayList<ViewResolver>();
+                viewResolvers.add(getDustViewResolver());
+                viewResolvers.add(new BeanNameViewResolver());
+                viewResolver.setViewResolvers(viewResolvers);
+        
+                // Setting to Default View
+                ArrayList<View> defaultViews = new ArrayList<View>();
+                defaultViews.add(new MappingJackson2JsonView());
+                viewResolver.setDefaultViews(defaultViews);
+        
+                return viewResolver;
+            }
+            
             @Bean
             public ViewResolver getDustViewResolver() {
+                LOGGER.debug(">>> Setup View Resolver for JSP");
+        
                 InternalResourceViewResolver viewResolver = new InternalResourceViewResolver();
                 viewResolver.setPrefix("/WEB-INF/pages/");
                 viewResolver.setSuffix(".jsp");
@@ -41,13 +60,15 @@ Server-Side Dust Rendering Support Library
         
                 // set attribute for View instance
                 HashMap<String, Object> attributes = new HashMap<String, Object>();
-                attributes.put(SimpleDustTemplateView.TEMPLATE_LOADER, new HttpConnectDustViewTemplateLoader());
-                attributes.put(SimpleDustTemplateView.VIEW_PATH_PREFIX, "http://webresource_path/..");
+                HttpConnectDustTemplateLoader dustTemplateLoader = new HttpConnectDustTemplateLoader();
+                attributes.put(SimpleDustTemplateView.TEMPLATE_LOADER, dustTemplateLoader);
+                attributes.put(SimpleDustTemplateView.VIEW_PATH_PREFIX, "http://soopul.com/mullae/");
                 attributes.put(SimpleDustTemplateView.VIEW_PATH_SUFFIX, "/markup.js");
+                attributes.put(SimpleDustTemplateView.VIEW_CACHEABLE, "false");
                 viewResolver.setAttributesMap(attributes);
         
                 return viewResolver;
-            }
+           }
         
         }
 
