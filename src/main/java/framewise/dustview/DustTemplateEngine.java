@@ -24,7 +24,8 @@ public class DustTemplateEngine {
     private static final String DEFAULT_COMPILE_SOURCE_NAME = "ServerSideDustCompiler";
     private static final String DEFAULT_DUST_JS_FILE_PATH = "/dust/dust-full-1.1.1.js";
     private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.1.js";
-    private static final String DEFAULT_COMPILE_SCRIPT = "(dust.compile(source, templateKey))";
+    //    private static final String DEFAULT_COMPILE_SCRIPT = "(dust.compile(source, templateKey))";
+    private static final String DEFAULT_COMPILE_SCRIPT = "function dustCompile(templateKey, source){ return dust.compile(source, templateKey); }";
     private static final String DEFAULT_LOAD_SCRIPT = "function dustLoad(source) { dust.loadSource(source); }";
     private static final String DEFAULT_RENDER_SCRIPT =
             "function dustRender(templateKey,_writer,_error, json) {" +
@@ -106,8 +107,7 @@ public class DustTemplateEngine {
             context.evaluateReader(globalScope, dustJsHelperReader, dustJsHelperFilePath, dustHelperJsStream.available(), null);
 
             // loading dust load & rendering script
-            context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
-            context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
+            loadingScriptToEngine(context);
 
         } catch (Exception e) {
             throw new DustViewException("Throwing exception when initialize step for core engine!", e);
@@ -127,6 +127,12 @@ public class DustTemplateEngine {
             }
 
         }
+    }
+
+    protected void loadingScriptToEngine(Context context) {
+        context.evaluateString(globalScope, compileScript, compileSourceName, 0, null);
+        context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
+        context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
     }
 
     public void loadExtensionFunction(String filePath) {
@@ -156,24 +162,21 @@ public class DustTemplateEngine {
         }
     }
 
-    //TODO refactoring
-
     /**
      * Compile HTML Markup that used by Dust.js
      *
-     * @param source      HTML Markup Source
+     *
      * @param templateKey
+     * @param source      HTML Markup Source
      * @return Compiled HTML Markup(JavaScript Format)
      */
-    public String compile(String source, String templateKey) {
+    public String compile(String templateKey, String source) {
         final Context context = Context.enter();
         try {
             context.setOptimizationLevel(optimizationLevel);
-
-            globalScope.put("source", globalScope, source);
-            globalScope.put("templateKey", globalScope, templateKey);
-
-            return (String) context.evaluateString(globalScope, compileScript, compileSourceName, 0, null);
+            Function fct = (Function) globalScope.get("dustCompile", globalScope);
+            String compiled = (String) fct.call(context, globalScope, globalScope, new Object[]{templateKey, source});
+            return compiled;
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when compile Dust JS Source", e);
         } finally {

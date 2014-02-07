@@ -44,6 +44,14 @@ public class SimpleDustViewInitializer implements DustViewInitializer {
             }
         }
 
+        if (attributesMap.get(DUST_COMPILED) != null && attributesMap.get(DUST_COMPILED) instanceof String) {
+            String compiled = (String) attributesMap.get(DUST_COMPILED);
+            if ("true".equalsIgnoreCase(compiled) || "false".equalsIgnoreCase(compiled)) {
+                view.setCompiled(Boolean.valueOf(compiled.toLowerCase()));
+            }
+        }
+
+
         if (attributesMap.get(DUST_JS_CORE_FILE_PATH) != null && attributesMap.get(DUST_JS_CORE_FILE_PATH) instanceof String) {
             String filePath = (String) attributesMap.get(DUST_JS_CORE_FILE_PATH);
             view.getDustEngine().setDustJsFilePath(filePath);
@@ -56,7 +64,12 @@ public class SimpleDustViewInitializer implements DustViewInitializer {
 
         if (attributesMap.get(DUST_JS_EXTENSION_FILE_PATH) != null && attributesMap.get(DUST_JS_EXTENSION_FILE_PATH) instanceof String) {
             String filePath = (String) attributesMap.get(DUST_JS_EXTENSION_FILE_PATH);
-            view. getDustEngine().loadExtensionFunction(filePath);
+            view.getDustEngine().loadExtensionFunction(filePath);
+        }
+
+        if (attributesMap.get(DUST_ENGINE_OBJECT) != null && attributesMap.get(DUST_ENGINE_OBJECT) instanceof DustTemplateEngine) {
+            DustTemplateEngine engine = (DustTemplateEngine) attributesMap.get(DUST_ENGINE_OBJECT);
+            view.setDustEngine(engine);
         }
     }
 }

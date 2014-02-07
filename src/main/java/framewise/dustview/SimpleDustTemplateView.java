@@ -36,7 +36,6 @@ public class SimpleDustTemplateView extends JstlView {
     public static final String VIEW_FILE_PATH = "_VIEW_FILE_PATH";
     public static final String VIEW_PATH_OVERRIDE = "_VIEW_PATH_OVERRIDE";
     public static final String VIEW_PATH_KEY = "_VIEW_PATH_KEY";
-
     public static final String CONTENT_KEY = "_CONTENT_KEY";
     public static final String CONTENT_TEXT_KEY = "_CONTENT_TEXT_KEY";
 
@@ -46,6 +45,9 @@ public class SimpleDustTemplateView extends JstlView {
     public static final String VIEW_SOURCE = "_VIEW_SOURCE";
     public static final String CACHE_PROVIDER = "_CACHE_PROVIDER";
     public static final String VIEW_CACHEABLE = "_VIEW_CACHE";
+    public static final String DUST_COMPILED = "_DUST_COMPILED";
+    public static final String DUST_ENGINE_OBJECT = "_DUST_ENGINE_OBJECT";
+
 
     private ObjectMapper jsonMapper = new ObjectMapper();
     private DustTemplateEngine dustEngine = new DustTemplateEngine();
@@ -61,12 +63,13 @@ public class SimpleDustTemplateView extends JstlView {
     private boolean viewCacheable = true;
     private boolean mergePath = true;
 
+    private boolean compiled = true;
+
     private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
 
     private DustViewErrorHandler errorHandler = new DefaultDustViewErrorHandler();
 
     private DustViewInitializer initializer = new SimpleDustViewInitializer();
-
 
     /**
      * Default Constructor
@@ -151,8 +154,12 @@ public class SimpleDustTemplateView extends JstlView {
         return useCache;
     }
 
-    private void loadResourceToScriptEngine(String templateKey, String viewPath, String cachedTemplateSource) {
-        getDustEngine().load(templateKey, cachedTemplateSource);
+    private void loadResourceToScriptEngine(String templateKey, String viewPath, String templateSource) {
+        if (!compiled) {
+            //need compile html by dust.js
+            templateSource = getDustEngine().compile(templateKey, templateSource);
+        }
+        getDustEngine().load(templateKey, templateSource);
     }
 
     protected boolean isCaching(boolean isRefresh, String cacheKey) {
@@ -311,6 +318,8 @@ public class SimpleDustTemplateView extends JstlView {
     protected void initApplicationContext() throws BeansException {
         super.initApplicationContext();
         initializer.initializeViewProperty(getAttributesMap(), this);
+        // re-initializing context because change attribute!
+        getDustEngine().initializeContext();
     }
 
     /* -- Getter & Setter -- */
@@ -416,5 +425,13 @@ public class SimpleDustTemplateView extends JstlView {
 
     public void setInitializer(DustViewInitializer initializer) {
         this.initializer = initializer;
+    }
+
+    public boolean isCompiled() {
+        return compiled;
+    }
+
+    public void setCompiled(boolean compiled) {
+        this.compiled = compiled;
     }
 }

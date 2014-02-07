@@ -36,7 +36,7 @@ public class DustTemplateEngineTest {
 		DustTemplateEngine engine = new DustTemplateEngine();
 		String source = "Hello World!";
 		// compile
-		String compiled = engine.compile(source, "test1");
+		String compiled = engine.compile("test1", source);
 		assertThat(
 				compiled,
 				is("(function(){dust.register(\"test1\",body_0);function body_0(chk,ctx){return chk.write(\"Hello World!\");}return body_0;})();"));
@@ -56,13 +56,13 @@ public class DustTemplateEngineTest {
         DustTemplateEngine engine = new DustTemplateEngine();
         String source = "Hello World!";
         // compile
-        String compiled1 = engine.compile(source, "test1");
+        String compiled1 = engine.compile("test1", source);
         assertThat(
                 compiled1,
                 is("(function(){dust.register(\"test1\",body_0);function body_0(chk,ctx){return chk.write(\"Hello World!\");}return body_0;})();"));
 
         // compile
-        String compiled2 = engine.compile(source, "test2");
+        String compiled2 = engine.compile("test2", source);
         assertThat(
                 compiled2,
                 is("(function(){dust.register(\"test2\",body_0);function body_0(chk,ctx){return chk.write(\"Hello World!\");}return body_0;})();"));
@@ -93,7 +93,7 @@ public class DustTemplateEngineTest {
 		DustTemplateEngine engine = new DustTemplateEngine();
 		String source = "Hello {name} World!";
 		// compile
-		String compiled = engine.compile(source, "test2");
+		String compiled = engine.compile("test2", source);
 		assertThat(
 				compiled,
 				is("(function(){dust.register(\"test2\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx.get(\"name\"),ctx,\"h\").write(\" World!\");}return body_0;})();"));
@@ -113,7 +113,7 @@ public class DustTemplateEngineTest {
         DustTemplateEngine engine = new DustTemplateEngine();
         String source = "Hello {name} World!";
         // compile
-        String compiled = engine.compile(source, "test");
+        String compiled = engine.compile("test", source);
         assertThat(
                 compiled,
                 is("(function(){dust.register(\"test\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx.get(\"name\"),ctx,\"h\").write(\" World!\");}return body_0;})();"));
