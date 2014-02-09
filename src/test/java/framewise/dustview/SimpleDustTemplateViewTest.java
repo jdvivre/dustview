@@ -16,10 +16,10 @@ import static org.junit.Assert.assertThat;
  */
 public class SimpleDustTemplateViewTest {
 
-    SimpleDustTemplateView v = new SimpleDustTemplateView();
+    SimpleDustTemplateView v = new SimpleDustTemplateView(true);
 
     @Test
-    public void createViewTemplate() {
+    public void createViewTemplate() throws Exception {
         assertThat(v.getViewTemplateLoader(), nullValue());
 
         MockTemplateLoader mockTemplateLoader = new MockTemplateLoader();
@@ -27,13 +27,13 @@ public class SimpleDustTemplateViewTest {
         attributeMap.put(SimpleDustTemplateView.TEMPLATE_LOADER, mockTemplateLoader);
         v.setAttributesMap(attributeMap);
 
-        v.initApplicationContext();
+        v.afterPropertiesSet();
 
         assertThat(v.getViewTemplateLoader(), CoreMatchers.<DustTemplateLoader>equalTo(mockTemplateLoader));
     }
 
     @Test
-    public void configViewPath() {
+    public void configViewPath() throws Exception {
         assertThat(v.getViewPrefixPath(), is(""));
         assertThat(v.getViewSuffixPath(), is(""));
 
@@ -42,7 +42,7 @@ public class SimpleDustTemplateViewTest {
         attributeMap.put(SimpleDustTemplateView.VIEW_PATH_SUFFIX, "/markup.js");
         v.setAttributesMap(attributeMap);
 
-        v.initApplicationContext();
+        v.afterPropertiesSet();
 
         assertThat(v.getViewPrefixPath(), is("http://..."));
         assertThat(v.getViewSuffixPath(), is("/markup.js"));
