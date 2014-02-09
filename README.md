@@ -1,7 +1,10 @@
 DustView
 ========
 
-Server-Side Dust Rendering Support Library 
+Server-Side Dust Rendering Support Library
+
+> DustView 1.0.M1 support dust 1.x.
+> if using dust 2.x is DustView 1.0.M2 version or more.
 
 # Using DustTemplateEigine
 
