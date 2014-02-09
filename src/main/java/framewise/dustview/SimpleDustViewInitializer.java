@@ -52,22 +52,26 @@ public class SimpleDustViewInitializer implements DustViewInitializer {
         }
 
 
-        if (attributesMap.get(DUST_JS_CORE_FILE_PATH) != null && attributesMap.get(DUST_JS_CORE_FILE_PATH) instanceof String) {
+        if (attributesMap.get(DUST_JS_CORE_FILE_PATH) != null &&
+                attributesMap.get(DUST_JS_CORE_FILE_PATH) instanceof String) {
             String filePath = (String) attributesMap.get(DUST_JS_CORE_FILE_PATH);
             view.getDustEngine().setDustJsFilePath(filePath);
         }
 
-        if (attributesMap.get(DUST_JS_HELPER_FILE_PATH) != null && attributesMap.get(DUST_JS_HELPER_FILE_PATH) instanceof String) {
+        if (attributesMap.get(DUST_JS_HELPER_FILE_PATH) != null &&
+                attributesMap.get(DUST_JS_HELPER_FILE_PATH) instanceof String) {
             String filePath = (String) attributesMap.get(DUST_JS_HELPER_FILE_PATH);
             view.getDustEngine().setDustJsHelperFilePath(filePath);
         }
 
-        if (attributesMap.get(DUST_JS_EXTENSION_FILE_PATH) != null && attributesMap.get(DUST_JS_EXTENSION_FILE_PATH) instanceof String) {
+        if (attributesMap.get(DUST_JS_EXTENSION_FILE_PATH) != null &&
+                attributesMap.get(DUST_JS_EXTENSION_FILE_PATH) instanceof String) {
             String filePath = (String) attributesMap.get(DUST_JS_EXTENSION_FILE_PATH);
             view.getDustEngine().loadExtensionFunction(filePath);
         }
 
-        if (attributesMap.get(DUST_ENGINE_OBJECT) != null && attributesMap.get(DUST_ENGINE_OBJECT) instanceof DustTemplateEngine) {
+        if (attributesMap.get(DUST_ENGINE_OBJECT) != null &&
+                attributesMap.get(DUST_ENGINE_OBJECT) instanceof DustTemplateEngine) {
             DustTemplateEngine engine = (DustTemplateEngine) attributesMap.get(DUST_ENGINE_OBJECT);
             view.setDustEngine(engine);
         }
