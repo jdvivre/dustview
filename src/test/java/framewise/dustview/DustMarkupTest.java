@@ -49,6 +49,33 @@ public class DustMarkupTest {
         assertThat(getView(m), is("0.name is me 1.name is me 2.name is me 3.name is me 4.http://github.com?p=%EA%B0%92 5.http%3A%2F%2Fgithub.com%3Fp%3D%EA%B0%92 6.&quot;name is me&quot; 6.&quot;http://github.com?p=값&quot; "));
     }
 
+    @Test
+    public void section() {
+        ModelMap reqModel = createModelMap("section");
+        Map<String, Object> m = rendering(reqModel);
+
+        assertThat(getView(m), is("<h1>Title</h1><span>name1-value1</span>"));
+    }
+
+    @Test
+    public void context() {
+        ModelMap reqModel = createModelMap("context");
+        Map<String, Object> m = rendering(reqModel);
+
+        assertThat(getView(m), is("<h1>Title</h1><span>name1-value1</span>/* walk up to parent of context */<span>name2</span>"));
+    }
+
+    /**
+     * https://github.com/linkedin/dustjs/wiki/Dust-Tutorial#wiki-paths
+     */
+    @Test
+    public void context2() {
+        ModelMap reqModel = createModelMap("context2");
+        Map<String, Object> m = rendering(reqModel);
+
+        assertThat(getView(m), is("<h1>Title</h1><span>b: name1</span><span>c: name3</span><span>a: name2</span>"));
+    }
+
     protected String getView(Map<String, Object> m) {
         return (String) m.get(SimpleDustTemplateView.DEFAULT_EXPORT_VIEW_SOURCE_KEY);
     }
