@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>framewise</groupId>
     <artifactId>dustview</artifactId>
-    <version>1.0.M2-SNAPSHOT</version>
+    <version>1.0.GA</version>
     <packaging>jar</packaging>
     <name>DustView</name>
     <description>Server-Side Dust View Library</description>
