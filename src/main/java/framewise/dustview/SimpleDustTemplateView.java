@@ -74,7 +74,6 @@ public class SimpleDustTemplateView extends JstlView {
      * Default Constructor
      */
     public SimpleDustTemplateView() {
-
     }
 
     public SimpleDustTemplateView(boolean isInitializEngine) {
