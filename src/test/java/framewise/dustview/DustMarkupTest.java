@@ -33,12 +33,20 @@ public class DustMarkupTest {
     }
 
     @Test
-    public void basic1() throws IOException {
+    public void basic1() {
         ModelMap reqModel = createModelMap("basic1");
-
         Map<String, Object> m = rendering(reqModel);
 
         assertThat(getView(m), is("Famous People<ul><li>Larry</li><li>Curly</li><li>Moe</li></ul>"));
+    }
+
+    //TODO {_json|jp} 추가 필요
+    @Test
+    public void escape() {
+        ModelMap reqModel = createModelMap("escape");
+        Map<String, Object> m = rendering(reqModel);
+
+        assertThat(getView(m), is("0.name is me 1.name is me 2.name is me 3.name is me 4.http://github.com?p=%EA%B0%92 5.http%3A%2F%2Fgithub.com%3Fp%3D%EA%B0%92 6.&quot;name is me&quot; 6.&quot;http://github.com?p=값&quot; "));
     }
 
     protected String getView(Map<String, Object> m) {
@@ -49,7 +57,7 @@ public class DustMarkupTest {
         return v.createMergedOutputModel(reqModel, new MockHttpServletRequest(), new MockHttpServletResponse());
     }
 
-    protected ModelMap createModelMap(String key) throws IOException {
+    protected ModelMap createModelMap(String key) {
         ModelMap reqModel = new ModelMap();
         reqModel.put(SimpleDustTemplateView.TEMPLATE_KEY, key);
         reqModel.put(SimpleDustTemplateView.CONTENT_TEXT_KEY, loadJson(key));
@@ -57,8 +65,12 @@ public class DustMarkupTest {
         return reqModel;
     }
 
-    private String loadJson(String path) throws IOException {
+    private String loadJson(String path) {
         ClassPathResource resource = new ClassPathResource("/json/" + path + ".json");
-        return new String(Files.readAllBytes(Paths.get(resource.getURI())));
+        try {
+            return new String(Files.readAllBytes(Paths.get(resource.getURI())));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
