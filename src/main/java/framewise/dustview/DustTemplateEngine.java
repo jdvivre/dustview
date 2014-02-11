@@ -24,7 +24,6 @@ public class DustTemplateEngine {
     private static final String DEFAULT_COMPILE_SOURCE_NAME = "ServerSideDustCompiler";
     private static final String DEFAULT_DUST_JS_FILE_PATH = "/dust/dust-full-1.1.1.js";
     private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.1.js";
-    //    private static final String DEFAULT_COMPILE_SCRIPT = "(dust.compile(source, templateKey))";
     private static final String DEFAULT_COMPILE_SCRIPT = "function dustCompile(templateKey, source){ return dust.compile(source, templateKey); }";
     private static final String DEFAULT_LOAD_SCRIPT = "function dustLoad(source) { dust.loadSource(source); }";
     private static final String DEFAULT_RENDER_SCRIPT =
@@ -53,61 +52,53 @@ public class DustTemplateEngine {
 
     private Map<String, String> compiledSourceCache = new HashMap<String, String>();
 
+    /**
+     * Create dust engine object with initialization
+     */
     public DustTemplateEngine() {
         initializeContext();
+    }
+
+    /**
+     * Create dust engine object with initialization if needs
+     *
+     * @param isInitialize
+     */
+    public DustTemplateEngine(boolean isInitialize) {
+        if (isInitialize) {
+            initializeContext();
+        }
     }
 
     /**
      * dust context initialize method. must call before running dust
      */
     public void initializeContext() {
-        InputStream dustJsStream = null;
-        InputStream dustHelperJsStream = null;
-        try {
-            dustJsStream = getDustJsStream(getDustJsFilePath());
-            dustHelperJsStream = getDustJsStream(getDustJsHelperFilePath());
+        loadScriptFile(getDustJsFilePath());
 
-            loadDustJsEngine(dustJsStream, dustHelperJsStream);
-        } finally {
-            try {
-                if (dustJsStream != null) {
-                    dustJsStream.close();
-                }
-                if (dustHelperJsStream != null) {
-                    dustHelperJsStream.close();
-                }
-            } catch (Exception e) {
-                throw new DustViewException("Throwing exception when initialize step for core engine!", e);
-            }
+        // file exist
+        if (getDustJsHelperFilePath().length() > 0) {
+            loadScriptFile(getDustJsHelperFilePath());
         }
 
+        // loading dust load & rendering script
+        loadingScriptToEngine();
     }
 
-
-    /**
-     * Initialize Dust JS Context
-     *
-     * @param dustJsStream
-     * @param dustHelperJsStream
-     */
-    protected void loadDustJsEngine(InputStream dustJsStream, InputStream dustHelperJsStream) {
-        Reader dustJsReader = null;
-        Reader dustJsHelperReader = null;
+    public void loadScriptFile(String filePath) {
+        InputStream fileStream = null;
+        Reader fileReader = null;
 
         Context context = Context.enter();
         try {
-            dustJsReader = new InputStreamReader(dustJsStream, encoding);
-            dustJsHelperReader = new InputStreamReader(dustHelperJsStream, encoding);
+            fileStream = getDustJsStream(filePath);
+            fileReader = new InputStreamReader(fileStream, encoding);
 
             context.setOptimizationLevel(optimizationLevel);
-
-            globalScope = context.initStandardObjects();
-            // loading dust script files
-            context.evaluateReader(globalScope, dustJsReader, dustJsFilePath, dustJsStream.available(), null);
-            context.evaluateReader(globalScope, dustJsHelperReader, dustJsHelperFilePath, dustHelperJsStream.available(), null);
-
-            // loading dust load & rendering script
-            loadingScriptToEngine(context);
+            if (globalScope == null) {
+                globalScope = context.initStandardObjects();
+            }
+            context.evaluateReader(globalScope, fileReader, filePath, fileStream.available(), null);
 
         } catch (Exception e) {
             throw new DustViewException("Throwing exception when initialize step for core engine!", e);
@@ -115,24 +106,40 @@ public class DustTemplateEngine {
             Context.exit();
 
             try {
-                if (dustJsReader != null) {
-                    dustJsReader.close();
+                if (fileStream != null) {
+                    fileStream.close();
                 }
-                if (dustJsHelperReader != null) {
-                    dustJsHelperReader.close();
+
+                if (fileReader != null) {
+                    fileReader.close();
                 }
-            } catch (IOException e) {
-                logger.error("Fail to dust eignen loading!!", e);
+
+            } catch (Exception e) {
+                logger.error("Fail to dust engine loading!!", e);
                 throw new DustViewException(e);
             }
 
         }
     }
 
-    protected void loadingScriptToEngine(Context context) {
-        context.evaluateString(globalScope, compileScript, compileSourceName, 0, null);
-        context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
-        context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
+    /**
+     * Loading dust execution script. (compile-load-render script)
+     */
+    protected void loadingScriptToEngine() {
+        Context context = Context.enter();
+        try {
+            context.setOptimizationLevel(optimizationLevel);
+
+            // loading dust execution script
+            context.evaluateString(globalScope, compileScript, compileSourceName, 0, null);
+            context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
+            context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
+
+        } catch (Exception e) {
+            throw new DustViewException("Throwing exception when initialize step for core engine!", e);
+        } finally {
+            Context.exit();
+        }
     }
 
     public void loadExtensionFunction(String filePath) {
@@ -164,7 +171,6 @@ public class DustTemplateEngine {
 
     /**
      * Compile HTML Markup that used by Dust.js
-     *
      *
      * @param templateKey
      * @param source      HTML Markup Source

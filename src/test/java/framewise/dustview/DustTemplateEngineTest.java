@@ -1,55 +1,70 @@
 package framewise.dustview;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import org.junit.Test;
 
 import java.io.InputStream;
 import java.io.StringWriter;
 
-import org.junit.Test;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
 
 /**
- *
  * Test for DustTemplateEngine class
  *
  * @author chanwook
  */
 public class DustTemplateEngineTest {
 
-	@Test
-	public void findDustJsFile() throws Exception {
-		DustTemplateEngine engine = new DustTemplateEngine();
-		// Load Dust Js file
-		InputStream dustJsFileStream = engine.getDustJsStream(engine.getDustJsFilePath());
-		assertThat(dustJsFileStream, notNullValue());
-		assertThat(dustJsFileStream.available(), is(102697));
+    @Test
+    public void findDustJsFile() throws Exception {
+        /** 1.x file */
+        DustTemplateEngine engine = new DustTemplateEngine();
+        // Load Dust Js file
+        InputStream dustJsFileStream = engine.getDustJsStream(engine.getDustJsFilePath());
+        assertThat(dustJsFileStream, notNullValue());
+        assertThat(dustJsFileStream.available(), is(102697));
 
-		// Load Dust Helper Js file
-		InputStream dustJsHelperFileStream = engine.getDustJsStream(engine.getDustJsHelperFilePath());
-		assertThat(dustJsHelperFileStream, notNullValue());
-		assertThat(dustJsHelperFileStream.available(), is(19780));
-	}
+        // Load Dust Helper Js file
+        InputStream dustJsHelperFileStream = engine.getDustJsStream(engine.getDustJsHelperFilePath());
+        assertThat(dustJsHelperFileStream, notNullValue());
+        assertThat(dustJsHelperFileStream.available(), is(19780));
 
-	@Test
-	public void compile2load2renderinDustJsSource() throws Exception {
-		DustTemplateEngine engine = new DustTemplateEngine();
-		String source = "Hello World!";
-		// compile
-		String compiled = engine.compile("test1", source);
-		assertThat(
-				compiled,
-				is("(function(){dust.register(\"test1\",body_0);function body_0(chk,ctx){return chk.write(\"Hello World!\");}return body_0;})();"));
+        /** 2.x file */
+        engine.setDustJsFilePath("/dust/dust-full-2.2.3.js");
+        InputStream dust2FileStream = engine.getDustJsStream(engine.getDustJsFilePath());
+        assertThat(dust2FileStream, notNullValue());
+        assertThat(dust2FileStream.available(), is(122481));
+    }
 
-		// load
-		engine.load("t1", compiled);
+    @Test
+    public void isNotLoadHelperScriptWhen2DustVersion() {
+        DustTemplateEngine e = new DustTemplateEngine(false);
 
-		// render
-		StringWriter writer = new StringWriter();
+        e.setDustJsFilePath("/dust/dust-full-2.2.3.js");
+        e.setDustJsHelperFilePath("");
+        e.initializeContext();
+    }
+
+    @Test
+    public void compile2load2renderinDustJsSource() throws Exception {
+        DustTemplateEngine engine = new DustTemplateEngine();
+        String source = "Hello World!";
+        // compile
+        String compiled = engine.compile("test1", source);
+        assertThat(
+                compiled,
+                is("(function(){dust.register(\"test1\",body_0);function body_0(chk,ctx){return chk.write(\"Hello World!\");}return body_0;})();"));
+
+        // load
+        engine.load("t1", compiled);
+
+        // render
+        StringWriter writer = new StringWriter();
         StringWriter errorWriter = new StringWriter();
-		engine.render(writer, errorWriter, "test1", "{}");
-		assertThat(writer.getBuffer().toString(), is("Hello World!"));
-	}
+        engine.render(writer, errorWriter, "test1", "{}");
+        assertThat(writer.getBuffer().toString(), is("Hello World!"));
+    }
 
     @Test
     public void withCache() throws Exception {
@@ -88,28 +103,28 @@ public class DustTemplateEngineTest {
 
     }
 
-	@Test
-	public void renderWithJson() throws Exception {
-		DustTemplateEngine engine = new DustTemplateEngine();
-		String source = "Hello {name} World!";
-		// compile
-		String compiled = engine.compile("test2", source);
-		assertThat(
-				compiled,
-				is("(function(){dust.register(\"test2\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx.get(\"name\"),ctx,\"h\").write(\" World!\");}return body_0;})();"));
+    @Test
+    public void renderWithJson() throws Exception {
+        DustTemplateEngine engine = new DustTemplateEngine();
+        String source = "Hello {name} World!";
+        // compile
+        String compiled = engine.compile("test2", source);
+        assertThat(
+                compiled,
+                is("(function(){dust.register(\"test2\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx.get(\"name\"),ctx,\"h\").write(\" World!\");}return body_0;})();"));
 
-		// load
-		engine.load("t1", compiled);
+        // load
+        engine.load("t1", compiled);
 
-		// render
-		StringWriter writer = new StringWriter();
+        // render
+        StringWriter writer = new StringWriter();
         StringWriter errorWriter = new StringWriter();
-		engine.render(writer, errorWriter, "test2", "{\"name\":\"chanwook\"}");
-		assertThat(writer.getBuffer().toString(), is("Hello chanwook World!"));
-	}
+        engine.render(writer, errorWriter, "test2", "{\"name\":\"chanwook\"}");
+        assertThat(writer.getBuffer().toString(), is("Hello chanwook World!"));
+    }
 
-	@Test
-	public void templateKeyNotFound() throws Exception {
+    @Test
+    public void templateKeyNotFound() throws Exception {
         DustTemplateEngine engine = new DustTemplateEngine();
         String source = "Hello {name} World!";
         // compile
@@ -126,5 +141,5 @@ public class DustTemplateEngineTest {
         StringWriter errorWriter = new StringWriter();
         engine.render(writer, errorWriter, "not-found", "{\"name\":\"chanwook\"}");
         assertThat(errorWriter.getBuffer().toString(), is("Error: Template Not Found: not-found"));
-	}
+    }
 }

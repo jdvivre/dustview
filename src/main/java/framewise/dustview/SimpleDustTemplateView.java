@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.support.RequestContext;
@@ -50,7 +49,7 @@ public class SimpleDustTemplateView extends JstlView {
 
 
     private ObjectMapper jsonMapper = new ObjectMapper();
-    private DustTemplateEngine dustEngine = new DustTemplateEngine();
+    private DustTemplateEngine dustEngine = new DustTemplateEngine(false);
 
     private DustTemplateLoader viewTemplateLoader;
 
@@ -75,7 +74,12 @@ public class SimpleDustTemplateView extends JstlView {
      * Default Constructor
      */
     public SimpleDustTemplateView() {
+    }
 
+    public SimpleDustTemplateView(boolean isInitializEngine) {
+        if (isInitializEngine) {
+            this.dustEngine.initializeContext();
+        }
     }
 
     @Override
@@ -309,14 +313,10 @@ public class SimpleDustTemplateView extends JstlView {
         return super.createRequestContext(request, response, model);
     }
 
-    /**
-     * Initialzing View property (for DustEngine config)
-     *
-     * @throws BeansException
-     */
     @Override
-    protected void initApplicationContext() throws BeansException {
-        super.initApplicationContext();
+    public void afterPropertiesSet() throws Exception {
+        super.afterPropertiesSet();
+
         initializer.initializeViewProperty(getAttributesMap(), this);
         // re-initializing context because change attribute!
         getDustEngine().initializeContext();
