@@ -66,7 +66,7 @@ public class SimpleDustViewInitializer implements DustViewInitializer {
         if (attributesMap.get(DUST_JS_EXTENSION_FILE_PATH) != null &&
                 attributesMap.get(DUST_JS_EXTENSION_FILE_PATH) instanceof String) {
             String filePath = (String) attributesMap.get(DUST_JS_EXTENSION_FILE_PATH);
-            view.getDustEngine().loadExtensionFunction(filePath);
+            view.getDustEngine().setDustExtensionFilePath(filePath);
         }
 
         if (attributesMap.get(DUST_ENGINE_OBJECT) != null &&
