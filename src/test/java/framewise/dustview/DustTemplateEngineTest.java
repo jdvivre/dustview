@@ -1,6 +1,9 @@
 package framewise.dustview;
 
 import org.junit.Test;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.Scriptable;
 
 import java.io.InputStream;
 import java.io.StringWriter;
@@ -141,5 +144,25 @@ public class DustTemplateEngineTest {
         StringWriter errorWriter = new StringWriter();
         engine.render(writer, errorWriter, "not-found", "{\"name\":\"chanwook\"}");
         assertThat(errorWriter.getBuffer().toString(), is("Error: Template Not Found: not-found"));
+    }
+
+    @Test
+    public void loadExtensionFile() {
+        DustTemplateEngine e = new DustTemplateEngine(false);
+        e.setDustExtensionFilePath("/dust/dust-extension-test.js");
+        e.initializeContext();
+
+        final Context context = Context.enter();
+        try {
+            Scriptable globalScope = e.getGlobalScope();
+
+            Function fct = (Function) globalScope.get("extFunction", globalScope);
+            String result = (String) fct.call(context, globalScope, globalScope, new Object[]{});
+
+            assertThat(result, is("success!"));
+        } finally {
+            Context.exit();
+        }
+
     }
 }

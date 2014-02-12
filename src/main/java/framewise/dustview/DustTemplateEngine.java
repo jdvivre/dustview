@@ -51,6 +51,7 @@ public class DustTemplateEngine {
     private int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 
     private Map<String, String> compiledSourceCache = new HashMap<String, String>();
+    private String dustExtensionFilePath;
 
     /**
      * Create dust engine object with initialization
@@ -83,6 +84,11 @@ public class DustTemplateEngine {
 
         // loading dust load & rendering script
         loadingScriptToEngine();
+
+        // loading extension function
+        if (getDustExtensionFilePath() != null) {
+            loadScriptFile(getDustExtensionFilePath());
+        }
     }
 
     public void loadScriptFile(String filePath) {
@@ -139,33 +145,6 @@ public class DustTemplateEngine {
             throw new DustViewException("Throwing exception when initialize step for core engine!", e);
         } finally {
             Context.exit();
-        }
-    }
-
-    public void loadExtensionFunction(String filePath) {
-        Reader dustJsExtensionReader = null;
-        InputStream stream = null;
-        Context context = Context.enter();
-        try {
-            stream = getDustJsStream(filePath);
-            dustJsExtensionReader = new InputStreamReader(stream, encoding);
-            context.evaluateReader(globalScope, dustJsExtensionReader, filePath, stream.available(), null);
-        } catch (Exception e) {
-            throw new DustViewException("thrown exception when initialize step for extension!", e);
-        } finally {
-            Context.exit();
-
-            try {
-                if (stream != null) {
-                    stream.close();
-                }
-                if (dustJsExtensionReader != null) {
-                    dustJsExtensionReader.close();
-                }
-            } catch (IOException e) {
-                logger.error("Fail to load dust extension file!!", e);
-                throw new DustViewException(e);
-            }
         }
     }
 
@@ -335,5 +314,24 @@ public class DustTemplateEngine {
 
     public String getEncoding() {
         return encoding;
+    }
+
+    public void setDustExtensionFilePath(String dustExtensionFilePath) {
+        this.dustExtensionFilePath = dustExtensionFilePath;
+    }
+
+    public String getDustExtensionFilePath() {
+        return dustExtensionFilePath;
+    }
+
+    /**
+     * return initialized script engine object
+     *
+     * Caution!! This method is for test! Must not use in production!
+     *
+     * @return
+     */
+    Scriptable getGlobalScope(){
+        return this.globalScope;
     }
 }

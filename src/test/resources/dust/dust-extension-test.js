@@ -1,0 +1,3 @@
+function extFunction(){
+    return "success!";
+}
