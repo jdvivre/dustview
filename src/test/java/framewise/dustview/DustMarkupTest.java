@@ -8,9 +8,9 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ModelMap;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -98,7 +98,17 @@ public class DustMarkupTest {
     private String loadJson(String path) {
         ClassPathResource resource = new ClassPathResource("/json/" + path + ".json");
         try {
-            return new String(Files.readAllBytes(Paths.get(resource.getURI())));
+            BufferedReader reader = new BufferedReader(new FileReader(resource.getFile()));
+            StringBuilder stringBuilder = new StringBuilder();
+            String ls = System.getProperty("line.separator");
+
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line);
+                stringBuilder.append(ls);
+            }
+
+            return stringBuilder.toString();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
