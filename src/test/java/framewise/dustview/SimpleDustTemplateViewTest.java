@@ -9,6 +9,7 @@ import java.util.HashMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
 
 
 /**
@@ -166,6 +167,35 @@ public class SimpleDustTemplateViewTest {
         assertThat(false, is(result));
         result = e.load(key3, "<html>3</html>");
         assertThat(false, is(result));
+    }
+
+    @Test
+    public void compiled() {
+        String key = "key";
+        String source = "<html></html>";
+        String compiled = "function()";
+
+
+        DustTemplateEngine mock = mock(DustTemplateEngine.class);
+        v.setDustEngine(mock);
+        v.setViewCacheable(false);
+        // default
+        when(mock.compile(key, source)).thenReturn(compiled);
+        v.loadResourceToScriptEngine(key, "path", source);
+        verify(mock).load(key, source);
+
+        // compiled false, then do compile in runtime
+        v.setCompiled(false);
+        v.loadResourceToScriptEngine(key, "path", source);
+        verify(mock).load(key, compiled);
+
+        // compiled true, then do not compile in runtime
+        mock = mock(DustTemplateEngine.class);
+        when(mock.compile(key, source)).thenReturn(compiled);
+        v.setDustEngine(mock);
+        v.setCompiled(true);
+        v.loadResourceToScriptEngine(key, "path", source);
+        verify(mock).load(key, source);
     }
 
     static class MockTemplateLoader implements DustTemplateLoader {
