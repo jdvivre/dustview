@@ -22,12 +22,14 @@ public class DustTemplateEngine {
 
     private static final int DEFAULT_OPTIMIZATION_LEVEL = -1;
     private static final String DEFAULT_COMPILE_SOURCE_NAME = "ServerSideDustCompiler";
-    private static final String DEFAULT_DUST_JS_FILE_PATH = "/dust/dust-full-1.1.1.js";
-    private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "/dust/dust-helpers-1.1.1.js";
-    private static final String DEFAULT_COMPILE_SCRIPT = "function dustCompile(templateKey, source){ return dust.compile(source, templateKey); }";
-    private static final String DEFAULT_LOAD_SCRIPT = "function dustLoad(source) { dust.loadSource(source); }";
+    private static final String DEFAULT_DUST_JS_FILE_PATH = "/dust/dust-full-2.2.3.js";
+    private static final String DEFAULT_DUST_HELPER_JS_FILE_PATH = "";
+    private static final String DEFAULT_COMPILE_SCRIPT =
+            "function dustCompile(templateKey, source){ return dust.compile(source, templateKey); }";
+    private static final String DEFAULT_LOAD_SCRIPT =
+            "function dustLoad(source) { dust.loadSource(source); }";
     private static final String DEFAULT_RENDER_SCRIPT =
-            "function dustRender(templateKey,_writer,_error, json) {" +
+            "function dustRender(templateKey, _writer, _error, json) {" +
                     "return dust.render(templateKey,JSON.parse(json)," +
                     "function(err, out){" +
                     "if(out){ _writer.write(out); }" +
@@ -141,6 +143,18 @@ public class DustTemplateEngine {
             context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
             context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
 
+            if (logger.isDebugEnabled()) {
+                // debugging
+                context.evaluateString(globalScope,
+                        "var console = {\n" +
+                                "  log: function (msg) {\n" +
+                                "    java.lang.System.out.println(msg);\n" +
+                                "  }\n" +
+                                "};", compileSourceName, 0, null);
+                context.evaluateString(globalScope, "dust.isDebug=true;", compileSourceName, 0, null);
+                context.evaluateString(globalScope, "dust.debugLevel='DEBUG';", compileSourceName, 0, null);
+            }
+
         } catch (Exception e) {
             throw new DustViewException("Throwing exception when initialize step for core engine!", e);
         } finally {
@@ -186,7 +200,10 @@ public class DustTemplateEngine {
         final Context context = Context.enter();
         try {
             if (logger.isInfoEnabled()) {
-                logger.info("Compiled resource load to script engine!! (templateKey: " + templateKey + ")");
+                logger.info("Compiled resource load to script engine! " +
+                        "\n1) templateKey: " + templateKey +
+                        "\n2) compiled HTML: " + compiledSource
+                );
             }
 
             context.setOptimizationLevel(optimizationLevel);
@@ -194,7 +211,7 @@ public class DustTemplateEngine {
             fct.call(context, globalScope, globalScope, new Object[]{compiledSource});
 
             if (logger.isInfoEnabled()) {
-                logger.info("Add to compiled resource to cache!! (templateKey: " + templateKey + ")");
+                logger.info("Add to compiled resource to cache! (templateKey: " + templateKey + ")");
             }
             compiledSourceCache.put(templateKey, compiledSource);
             return true;
@@ -326,12 +343,12 @@ public class DustTemplateEngine {
 
     /**
      * return initialized script engine object
-     *
+     * <p/>
      * Caution!! This method is for test! Must not use in production!
      *
      * @return
      */
-    Scriptable getGlobalScope(){
+    Scriptable getGlobalScope() {
         return this.globalScope;
     }
 }

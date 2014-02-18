@@ -105,16 +105,21 @@ public class SimpleDustTemplateView extends JstlView {
         loadTemplateSource(templateKey, viewPath, isRefresh);
 
         // rendering view
-        String renderView = renderingView(templateKey, json);
+        String renderHtml = renderingView(templateKey, json);
 
         addResponseMoreInformation(res);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Dust View Rendering Result = TemplateKey: " + templateKey + ", Template File Path: " + viewPath +
-                    ", JSON: " + json);
+            logger.debug("[Dust View Rendering Result] " +
+                    "\n1) TemplateKey: " + templateKey +
+                    "\n2) Template File Path: " + viewPath +
+                    "\n3) Compiled HTML: " + viewPath +
+                    "\n4) JSON: " + json +
+                    "\n5) Final Rendering HTML: " + renderHtml
+            );
         }
 
-        bindingResult(mergedOutputModel, json, renderView);
+        bindingResult(mergedOutputModel, json, renderHtml);
 
         return mergedOutputModel;
     }
