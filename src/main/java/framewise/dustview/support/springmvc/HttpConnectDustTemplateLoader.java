@@ -1,5 +1,7 @@
-package framewise.dustview;
+package framewise.dustview.support.springmvc;
 
+import framewise.dustview.DustViewException;
+import framewise.dustview.support.DustTemplateLoader;
 import org.springframework.http.*;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;

@@ -1,4 +1,4 @@
-import framewise.dustview.DustTemplateEngineTest;
+import framewise.dustview.core.DustTemplateEngineTest;
 import org.junit.Test;
 
 /**

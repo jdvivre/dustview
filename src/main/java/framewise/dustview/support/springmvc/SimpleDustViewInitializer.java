@@ -1,8 +1,13 @@
-package framewise.dustview;
+package framewise.dustview.support.springmvc;
+
+import framewise.dustview.support.DustTemplateLoader;
+import framewise.dustview.support.ViewSourceCacheProvider;
+import framewise.dustview.core.DustTemplateEngine;
+import framewise.dustview.support.DustViewInitializer;
 
 import java.util.Map;
 
-import static framewise.dustview.SimpleDustTemplateView.*;
+import static framewise.dustview.support.springmvc.SimpleDustTemplateView.*;
 
 /**
  * @author chanwook

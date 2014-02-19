@@ -1,5 +1,7 @@
-package framewise.dustview;
+package framewise.dustview.support.springmvc;
 
+import framewise.dustview.support.springmvc.SimpleDustTemplateView;
+import framewise.dustview.support.springmvc.SimpleDustViewInitializer;
 import org.junit.Test;
 
 import java.util.HashMap;

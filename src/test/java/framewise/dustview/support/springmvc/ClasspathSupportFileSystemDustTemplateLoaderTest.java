@@ -1,5 +1,7 @@
-package framewise.dustview;
+package framewise.dustview.support.springmvc;
 
+import framewise.dustview.DustViewException;
+import framewise.dustview.support.springmvc.ClasspathSupportFileSystemDustTemplateLoader;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;

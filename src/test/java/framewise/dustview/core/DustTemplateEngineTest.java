@@ -1,5 +1,6 @@
-package framewise.dustview;
+package framewise.dustview.core;
 
+import framewise.dustview.core.DustTemplateEngine;
 import org.junit.Test;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;

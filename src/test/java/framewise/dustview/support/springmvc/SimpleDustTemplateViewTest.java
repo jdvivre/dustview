@@ -1,5 +1,9 @@
-package framewise.dustview;
+package framewise.dustview.support.springmvc;
 
+import framewise.dustview.core.DustTemplateEngine;
+import framewise.dustview.support.DustTemplateLoader;
+import framewise.dustview.support.springmvc.InMemoryViewSourceCacheProvider;
+import framewise.dustview.support.springmvc.SimpleDustTemplateView;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;

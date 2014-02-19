@@ -1,4 +1,4 @@
-package framewise.dustview;
+package framewise.dustview.support;
 
 /**
  * This interface is cache interface for view resource.

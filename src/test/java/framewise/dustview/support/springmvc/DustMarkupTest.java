@@ -1,6 +1,8 @@
-package framewise.dustview;
+package framewise.dustview.support.springmvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import framewise.dustview.support.springmvc.ClasspathSupportFileSystemDustTemplateLoader;
+import framewise.dustview.support.springmvc.SimpleDustTemplateView;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;

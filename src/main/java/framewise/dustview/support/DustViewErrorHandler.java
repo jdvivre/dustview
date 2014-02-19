@@ -1,4 +1,4 @@
-package framewise.dustview;
+package framewise.dustview.support;
 
 import java.io.StringWriter;
 
