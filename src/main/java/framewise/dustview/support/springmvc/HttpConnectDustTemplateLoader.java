@@ -33,11 +33,12 @@ public class HttpConnectDustTemplateLoader implements DustTemplateLoader {
                 headers.add("Accept", "text/html;charset=" + resourceEncoding);
 
                 ResponseEntity<String> responseEntity =
-                        restTemplate.exchange(templatePath, HttpMethod.GET, new HttpEntity<String>(
-                                headers), String.class);
+                        restTemplate.exchange(templatePath, HttpMethod.GET,
+                                new HttpEntity<String>(headers), String.class);
 
                 if (!HttpStatus.OK.equals(responseEntity.getStatusCode())) {
-                    throw new DustViewException("Failed load template source!(status code: " + responseEntity.getStatusCode() + ", reason: " + responseEntity.getBody());
+                    throw new DustViewException("Failed load template source!(status code: " +
+                            responseEntity.getStatusCode() + ", reason: " + responseEntity.getBody());
                 }
 
                 String templateSource = responseEntity.getBody();
@@ -47,7 +48,7 @@ public class HttpConnectDustTemplateLoader implements DustTemplateLoader {
 
                 return templateSource;
             } catch (Exception e) {
-                throw new DustViewException("Failed to load Dust Tempmlate.", e);
+                throw new DustViewException("Failed to load Dust Template", e);
             }
         } else {
             throw new DustViewException("View path must start with 'http://~~' statement");

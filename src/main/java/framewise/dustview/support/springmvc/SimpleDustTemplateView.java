@@ -39,7 +39,6 @@ public class SimpleDustTemplateView extends JstlView {
     private String viewEncoding = DEFAULT_VIEW_ENCODING;
     private String exportViewSourceKey = DEFAULT_EXPORT_VIEW_SOURCE_KEY;
     private String exportJsonKey = DEFAULT_EXPORT_JSON_KEY;
-
     private String viewPrefixPath = "";
     private String viewSuffixPath = "";
 
@@ -75,7 +74,7 @@ public class SimpleDustTemplateView extends JstlView {
         String templateKey = getDustTemplateKey(mergedOutputModel);
         if (!StringUtils.hasText(templateKey)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("TemplateKey not found! Then pass to next view.");
+                logger.debug("TemplateKey not found! Then do not execute for dust binding!");
             }
             return mergedOutputModel;
         }
@@ -84,8 +83,8 @@ public class SimpleDustTemplateView extends JstlView {
         String json = createJson(templateKey, mergedOutputModel);
 
         // load template source
-        boolean isRefresh = getRefreshParam(templateKey, request);
         String viewPath = getViewPath(mergedOutputModel);
+        boolean isRefresh = getRefreshParam(templateKey, request);
         loadTemplateSource(templateKey, viewPath, isRefresh);
 
         // rendering view
@@ -213,8 +212,8 @@ public class SimpleDustTemplateView extends JstlView {
             // Rendering by DustEngine
             getDustEngine().render(writer, errorWriter, templateKey, json);
 
-            //will throw exception if occurred
-            errorHandler.checkError(templateKey, errorWriter, viewEncoding);
+            // will throw exception if occurred
+            errorHandler.handleError(templateKey, errorWriter, viewEncoding);
 
             String renderedView = new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
             return renderedView;
@@ -241,12 +240,12 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected String getViewPath(Map<String, ?> model) {
-        //TODO chain 방식으로 개선
         //Case 1. full view path
         Object viewPath = model.get(DustViewConstants.VIEW_PATH_OVERRIDE);
         if (viewPath != null) {
             return (String) viewPath;
         }
+
         // Case 2. merge view path with prefix, suffix
         viewPath = model.get(DustViewConstants.VIEW_FILE_PATH);
         if (viewPath != null) {

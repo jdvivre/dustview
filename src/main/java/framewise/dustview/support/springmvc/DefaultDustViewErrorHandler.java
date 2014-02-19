@@ -12,10 +12,20 @@ import java.io.StringWriter;
  * @author chanwook
  */
 public class DefaultDustViewErrorHandler implements DustViewErrorHandler {
-    public void checkError(String templateKey, StringWriter errorWriter, String viewEncoding) throws Exception {
+
+    /**
+     * Throw exception if has error message in rhino error buffer
+     *
+     * @param templateKey
+     * @param errorWriter
+     * @param viewEncoding
+     * @throws Exception
+     */
+    public void handleError(String templateKey, StringWriter errorWriter, String viewEncoding) throws Exception {
         String errorMessage = new String(errorWriter.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
         if (StringUtils.hasText(errorMessage)) {
-            throw new DustViewException("Exception thrown when rendering! templatekey: " + templateKey + ", caused by: " + errorMessage);
+            throw new DustViewException("Exception thrown when rendering! templateKey: " + templateKey +
+                    ", caused by: " + errorMessage);
         }
     }
 }
