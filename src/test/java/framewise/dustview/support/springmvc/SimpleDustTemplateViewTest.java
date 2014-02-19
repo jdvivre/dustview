@@ -2,8 +2,7 @@ package framewise.dustview.support.springmvc;
 
 import framewise.dustview.core.DustTemplateEngine;
 import framewise.dustview.support.DustTemplateLoader;
-import framewise.dustview.support.springmvc.InMemoryViewSourceCacheProvider;
-import framewise.dustview.support.springmvc.SimpleDustTemplateView;
+import framewise.dustview.support.DustViewConstants;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -29,7 +28,7 @@ public class SimpleDustTemplateViewTest {
 
         MockTemplateLoader mockTemplateLoader = new MockTemplateLoader();
         HashMap<String, Object> attributeMap = new HashMap<String, Object>();
-        attributeMap.put(SimpleDustTemplateView.TEMPLATE_LOADER, mockTemplateLoader);
+        attributeMap.put(DustViewConstants.TEMPLATE_LOADER, mockTemplateLoader);
         v.setAttributesMap(attributeMap);
 
         v.afterPropertiesSet();
@@ -43,8 +42,8 @@ public class SimpleDustTemplateViewTest {
         assertThat(v.getViewSuffixPath(), is(""));
 
         HashMap<String, Object> attributeMap = new HashMap<String, Object>();
-        attributeMap.put(SimpleDustTemplateView.VIEW_PATH_PREFIX, "http://...");
-        attributeMap.put(SimpleDustTemplateView.VIEW_PATH_SUFFIX, "/markup.js");
+        attributeMap.put(DustViewConstants.VIEW_PATH_PREFIX, "http://...");
+        attributeMap.put(DustViewConstants.VIEW_PATH_SUFFIX, "/markup.js");
         v.setAttributesMap(attributeMap);
 
         v.afterPropertiesSet();

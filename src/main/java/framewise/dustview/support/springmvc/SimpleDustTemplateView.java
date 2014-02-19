@@ -4,10 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import framewise.dustview.DustViewException;
 import framewise.dustview.core.DustTemplateEngine;
-import framewise.dustview.support.DustTemplateLoader;
-import framewise.dustview.support.DustViewErrorHandler;
-import framewise.dustview.support.DustViewInitializer;
-import framewise.dustview.support.ViewSourceCacheProvider;
+import framewise.dustview.support.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -33,26 +30,6 @@ public class SimpleDustTemplateView extends JstlView {
     public static final String DEFAULT_VIEW_ENCODING = "UTF-8";
     public static final String DEFAULT_EXPORT_VIEW_SOURCE_KEY = "_view";
     public static final String DEFAULT_EXPORT_JSON_KEY = "_json";
-    public static final String DUST_JS_CORE_FILE_PATH = "_DUST_JS_CORE_FILE_PATH";
-    public static final String DUST_JS_HELPER_FILE_PATH = "_DUST_JS_HELPER_FILE_PATH";
-    public static final String DUST_JS_EXTENSION_FILE_PATH = "_DUST_EXTENSION_JS_FILE_PATH";
-
-    public static final String TEMPLATE_KEY = "_TEMPLATE_KEY";
-    public static final String VIEW_FILE_PATH = "_VIEW_FILE_PATH";
-    public static final String VIEW_PATH_OVERRIDE = "_VIEW_PATH_OVERRIDE";
-    public static final String VIEW_PATH_KEY = "_VIEW_PATH_KEY";
-    public static final String CONTENT_KEY = "_CONTENT_KEY";
-    public static final String CONTENT_TEXT_KEY = "_CONTENT_TEXT_KEY";
-
-    public static final String TEMPLATE_LOADER = "_TEMPLATE_LOADER";
-    public static final String VIEW_PATH_PREFIX = "_VIEW_PATH_PREFIX";
-    public static final String VIEW_PATH_SUFFIX = "_VIEW_PATH_SUFFIX";
-    public static final String VIEW_SOURCE = "_VIEW_SOURCE";
-    public static final String CACHE_PROVIDER = "_CACHE_PROVIDER";
-    public static final String VIEW_CACHEABLE = "_VIEW_CACHE";
-    public static final String DUST_COMPILED = "_DUST_COMPILED";
-    public static final String DUST_ENGINE_OBJECT = "_DUST_ENGINE_OBJECT";
-
 
     private ObjectMapper jsonMapper = new ObjectMapper();
     private DustTemplateEngine dustEngine = new DustTemplateEngine(false);
@@ -62,6 +39,7 @@ public class SimpleDustTemplateView extends JstlView {
     private String viewEncoding = DEFAULT_VIEW_ENCODING;
     private String exportViewSourceKey = DEFAULT_EXPORT_VIEW_SOURCE_KEY;
     private String exportJsonKey = DEFAULT_EXPORT_JSON_KEY;
+
     private String viewPrefixPath = "";
     private String viewSuffixPath = "";
 
@@ -186,13 +164,13 @@ public class SimpleDustTemplateView extends JstlView {
 
     protected String createJson(String templateKey, Map<String, Object> model) {
         // first tyr for JSON Object!
-        Object jsonParam = model.get(CONTENT_KEY);
+        Object jsonParam = model.get(DustViewConstants.CONTENT_KEY);
         if (StringUtils.hasText(templateKey) && jsonParam != null) {
             return createJsonFromObject(templateKey, jsonParam);
         }
 
         // second try for JSON Text!
-        Object jsonTextParam = model.get(CONTENT_TEXT_KEY);
+        Object jsonTextParam = model.get(DustViewConstants.CONTENT_TEXT_KEY);
         if (StringUtils.hasText(templateKey) && jsonTextParam != null) {
             return createJsonFromText(templateKey, jsonTextParam);
         }
@@ -265,23 +243,23 @@ public class SimpleDustTemplateView extends JstlView {
     protected String getViewPath(Map<String, ?> model) {
         //TODO chain 방식으로 개선
         //Case 1. full view path
-        Object viewPath = model.get(VIEW_PATH_OVERRIDE);
+        Object viewPath = model.get(DustViewConstants.VIEW_PATH_OVERRIDE);
         if (viewPath != null) {
             return (String) viewPath;
         }
         // Case 2. merge view path with prefix, suffix
-        viewPath = model.get(VIEW_FILE_PATH);
+        viewPath = model.get(DustViewConstants.VIEW_FILE_PATH);
         if (viewPath != null) {
             return mergeViewPath(viewPath);
         }
 
         // Case 3. view path in properties
-        Object viewPathKey = model.get(VIEW_PATH_KEY);
+        Object viewPathKey = model.get(DustViewConstants.VIEW_PATH_KEY);
         if (viewPathKey != null && viewPathKey instanceof String) {
             viewPath = resolveViewPathInProperties((String) viewPathKey);
             return (String) viewPath;
         }
-        throw new IllegalArgumentException("View file path must require! param name is " + VIEW_FILE_PATH);
+        throw new IllegalArgumentException("View file path must require! param name is " + DustViewConstants.VIEW_FILE_PATH);
     }
 
     protected Object resolveViewPathInProperties(String viewPathKey) {
@@ -301,7 +279,7 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected String getDustTemplateKey(Map<String, ?> model) {
-        Object templateKey = model.get(TEMPLATE_KEY);
+        Object templateKey = model.get(DustViewConstants.TEMPLATE_KEY);
         if (templateKey != null && templateKey instanceof String) {
             return (String) templateKey;
         } else {

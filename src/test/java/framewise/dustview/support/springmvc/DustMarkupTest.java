@@ -1,8 +1,7 @@
 package framewise.dustview.support.springmvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import framewise.dustview.support.springmvc.ClasspathSupportFileSystemDustTemplateLoader;
-import framewise.dustview.support.springmvc.SimpleDustTemplateView;
+import framewise.dustview.support.DustViewConstants;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -91,9 +90,9 @@ public class DustMarkupTest {
 
     protected ModelMap createModelMap(String key) {
         ModelMap reqModel = new ModelMap();
-        reqModel.put(SimpleDustTemplateView.TEMPLATE_KEY, key);
-        reqModel.put(SimpleDustTemplateView.CONTENT_TEXT_KEY, loadJson(key));
-        reqModel.put(SimpleDustTemplateView.VIEW_FILE_PATH, "/template/" + key + ".html");
+        reqModel.put(DustViewConstants.TEMPLATE_KEY, key);
+        reqModel.put(DustViewConstants.CONTENT_TEXT_KEY, loadJson(key));
+        reqModel.put(DustViewConstants.VIEW_FILE_PATH, "/template/" + key + ".html");
         return reqModel;
     }
 

@@ -50,6 +50,7 @@ public class DustTemplateEngine {
     private String compileScript = DEFAULT_COMPILE_SCRIPT;
     private String loadScript = DEFAULT_LOAD_SCRIPT;
     private String renderScript = DEFAULT_RENDER_SCRIPT;
+
     // value: -1 ~ 9
     private int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 

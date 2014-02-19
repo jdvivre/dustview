@@ -1,7 +1,6 @@
 package framewise.dustview.support.springmvc;
 
-import framewise.dustview.support.springmvc.SimpleDustTemplateView;
-import framewise.dustview.support.springmvc.SimpleDustViewInitializer;
+import framewise.dustview.support.DustViewConstants;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -22,7 +21,7 @@ public class SimpleDustViewInitializerTest {
         assertTrue(v.isCompiled());
 
         HashMap<String, Object> map = new HashMap<String, Object>();
-        map.put(SimpleDustTemplateView.DUST_COMPILED, false);
+        map.put(DustViewConstants.DUST_COMPILED, false);
 
         i.initializeViewProperty(map, v);
 
