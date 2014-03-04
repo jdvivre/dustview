@@ -107,6 +107,15 @@ public class SimpleDustTemplateView extends JstlView {
         return mergedOutputModel;
     }
 
+    /**
+     * This method is pre step for rendering.
+     * Commonly this contains for relation to Spring framework code.
+     *
+     * @param model
+     * @param request
+     * @param res
+     * @return
+     */
     private Map<String, Object> prepareToRendering(Map<String, ? extends Object> model, HttpServletRequest request, HttpServletResponse res) {
         Map<String, Object> mergedOutputModel = new HashMap<String, Object>();
         mergedOutputModel.putAll(super.createMergedOutputModel(model, request, res));
@@ -117,10 +126,18 @@ public class SimpleDustTemplateView extends JstlView {
     protected void bindingResult(Map<String, Object> mergedOutputModel, String json, String renderView) {
         mergedOutputModel.put(this.exportViewSourceKey, renderView);
         mergedOutputModel.put(this.exportJsonKey, json);
-        //임시..
-        mergedOutputModel.put("_CONTENT_JSON", json);
     }
 
+    /**
+     * Load dust template source!
+     * This method has core logic.
+     * If not dust compiled html, do compiling for plain HTML!
+     *
+     * @param templateKey
+     * @param viewPath
+     * @param isRefresh
+     * @return
+     */
     protected boolean loadTemplateSource(String templateKey, String viewPath, boolean isRefresh) {
         String templateSource = null;
         boolean useCache = false;
@@ -161,6 +178,14 @@ public class SimpleDustTemplateView extends JstlView {
         return viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh;
     }
 
+    /**
+     * Create json that used object in model.
+     * Object convert to json string..
+     *
+     * @param templateKey
+     * @param model
+     * @return
+     */
     protected String createJson(String templateKey, Map<String, Object> model) {
         // first tyr for JSON Object!
         Object jsonParam = model.get(DustViewConstants.CONTENT_KEY);
@@ -198,7 +223,7 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     /**
-     * Create view source that using DustTemplateEngine
+     * Create final view html that using DustTemplateEngine.
      *
      * @param templateKey
      * @param json
@@ -239,6 +264,15 @@ public class SimpleDustTemplateView extends JstlView {
         res.setCharacterEncoding(viewEncoding);
     }
 
+    /**
+     * Resolve view file path with three step!
+     * 1) full view path
+     * 2) merge view path with prefix, suffix
+     * 3) view path in properties
+     *
+     * @param model
+     * @return
+     */
     protected String getViewPath(Map<String, ?> model) {
         //Case 1. full view path
         Object viewPath = model.get(DustViewConstants.VIEW_PATH_OVERRIDE);
@@ -277,6 +311,13 @@ public class SimpleDustTemplateView extends JstlView {
         return (String) viewPath;
     }
 
+    /**
+     * Resolve template key in model.
+     * Model had return by controller to created by user
+     *
+     * @param model
+     * @return
+     */
     protected String getDustTemplateKey(Map<String, ?> model) {
         Object templateKey = model.get(DustViewConstants.TEMPLATE_KEY);
         if (templateKey != null && templateKey instanceof String) {

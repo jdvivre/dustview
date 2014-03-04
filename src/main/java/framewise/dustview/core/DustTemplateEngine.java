@@ -32,11 +32,11 @@ public class DustTemplateEngine {
     private static final String DEFAULT_RENDER_SCRIPT =
             "function dustRender(templateKey, _writer, _error, json) {" +
                     "return dust.render(templateKey,JSON.parse(json)," +
-                    "function(err, out){" +
-                    "if(out){ _writer.write(out); }" +
-                    "if(err){ _error.write(err); }" +
-                    "}" +
-                    ");" +
+                        "function(err, out){" +
+                            "if(out){ _writer.write(out); }" +
+                            "if(err){ _error.write(err); }" +
+                        "}" +
+                        ");" +
                     "}";
 
     private static final String DEFAULT_ENCODING = "UTF-8";
@@ -95,6 +95,11 @@ public class DustTemplateEngine {
         }
     }
 
+    /**
+     * load javascript file to javascript engine(Rhino).
+     *
+     * @param filePath
+     */
     public void loadScriptFile(String filePath) {
         InputStream fileStream = null;
         Reader fileReader = null;
