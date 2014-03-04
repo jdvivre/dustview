@@ -166,6 +166,9 @@ public class SimpleDustTemplateView extends JstlView {
     private void loadResourceToScriptEngine(String templateKey, String viewPath, String templateSource) {
         if (!compiled) {
             //need compile html by dust.js
+            if (logger.isDebugEnabled()) {
+                logger.debug("Compile HTML to Dust Markup(" + templateKey + "): [Raw HTML Source] " + templateSource);
+            }
             templateSource = getDustEngine().compile(templateKey, templateSource);
         }
         getDustEngine().load(templateKey, templateSource);

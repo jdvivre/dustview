@@ -186,7 +186,10 @@ public class DustTemplateEngine {
         final Context context = Context.enter();
         try {
             if (logger.isInfoEnabled()) {
-                logger.info("Compiled resource load to script engine!! (templateKey: " + templateKey + ")");
+                logger.info("Compiled resource load to script engine! " +
+                        "\n1) templateKey: " + templateKey +
+                        "\n2) compiled HTML: " + compiledSource
+                );
             }
 
             context.setOptimizationLevel(optimizationLevel);
