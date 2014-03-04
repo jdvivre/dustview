@@ -105,16 +105,21 @@ public class SimpleDustTemplateView extends JstlView {
         loadTemplateSource(templateKey, viewPath, isRefresh);
 
         // rendering view
-        String renderView = renderingView(templateKey, json);
+        String renderHtml = renderingView(templateKey, json);
 
         addResponseMoreInformation(res);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Dust View Rendering Result = TemplateKey: " + templateKey + ", Template File Path: " + viewPath +
-                    ", JSON: " + json);
+            logger.debug("[Dust View Rendering Result] " +
+                    "\n1) TemplateKey: " + templateKey +
+                    "\n2) Template File Path: " + viewPath +
+                    "\n3) Compiled HTML: " + viewPath +
+                    "\n4) JSON: " + json +
+                    "\n5) Final Rendering HTML: " + renderHtml
+            );
         }
 
-        bindingResult(mergedOutputModel, json, renderView);
+        bindingResult(mergedOutputModel, json, renderHtml);
 
         return mergedOutputModel;
     }
@@ -126,8 +131,8 @@ public class SimpleDustTemplateView extends JstlView {
         return mergedOutputModel;
     }
 
-    protected void bindingResult(Map<String, Object> mergedOutputModel, String json, String renderView) {
-        mergedOutputModel.put(this.exportViewSourceKey, renderView);
+    protected void bindingResult(Map<String, Object> mergedOutputModel, String json, String renderHtml) {
+        mergedOutputModel.put(this.exportViewSourceKey, renderHtml);
         mergedOutputModel.put(this.exportJsonKey, json);
         //임시..
         mergedOutputModel.put("_CONTENT_JSON", json);
@@ -249,7 +254,6 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     protected String getViewPath(Map<String, ?> model) {
-        //TODO chain 방식으로 개선
         //Case 1. full view path
         Object viewPath = model.get(VIEW_PATH_OVERRIDE);
         if (viewPath != null) {
