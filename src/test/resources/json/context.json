@@ -1,0 +1,7 @@
+{
+    "outname": "name2",
+    "context": {
+        "name": "name1",
+        "value": "value1"
+    }
+}

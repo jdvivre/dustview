@@ -1,5 +1,6 @@
-package framewise.dustview;
+package framewise.dustview.support.springmvc;
 
+import framewise.dustview.support.ViewSourceCacheProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

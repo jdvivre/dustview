@@ -1,4 +1,4 @@
-package framewise.dustview;
+package framewise.dustview.support;
 
 import java.io.StringWriter;
 
@@ -16,5 +16,5 @@ public interface DustViewErrorHandler {
      * @param errorWriter
      * @param viewEncoding
      */
-    void checkError(String templateKey, StringWriter errorWriter, String viewEncoding) throws Exception;
+    void handleError(String templateKey, StringWriter errorWriter, String viewEncoding) throws Exception;
 }

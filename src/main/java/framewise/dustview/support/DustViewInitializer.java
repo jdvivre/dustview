@@ -1,4 +1,6 @@
-package framewise.dustview;
+package framewise.dustview.support;
+
+import framewise.dustview.support.springmvc.SimpleDustTemplateView;
 
 import java.util.Map;
 

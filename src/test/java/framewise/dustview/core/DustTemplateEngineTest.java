@@ -1,5 +1,6 @@
-package framewise.dustview;
+package framewise.dustview.core;
 
+import framewise.dustview.core.DustTemplateEngine;
 import org.junit.Test;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -22,7 +23,11 @@ public class DustTemplateEngineTest {
     @Test
     public void findDustJsFile() throws Exception {
         /** 1.x file */
-        DustTemplateEngine engine = new DustTemplateEngine();
+        DustTemplateEngine engine = new DustTemplateEngine(false);
+        engine.setDustJsFilePath("/dust/dust-full-1.1.1.js");
+        engine.setDustJsHelperFilePath("/dust/dust-helpers-1.1.1.js");
+        engine.initializeContext();
+
         // Load Dust Js file
         InputStream dustJsFileStream = engine.getDustJsStream(engine.getDustJsFilePath());
         assertThat(dustJsFileStream, notNullValue());
@@ -108,13 +113,15 @@ public class DustTemplateEngineTest {
 
     @Test
     public void renderWithJson() throws Exception {
-        DustTemplateEngine engine = new DustTemplateEngine();
+        DustTemplateEngine engine = new DustTemplateEngine(false);
+        engine.initializeContext();
+
         String source = "Hello {name} World!";
         // compile
         String compiled = engine.compile("test2", source);
         assertThat(
                 compiled,
-                is("(function(){dust.register(\"test2\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx.get(\"name\"),ctx,\"h\").write(\" World!\");}return body_0;})();"));
+                is("(function(){dust.register(\"test2\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx._get(false, [\"name\"]),ctx,\"h\").write(\" World!\");}return body_0;})();"));
 
         // load
         engine.load("t1", compiled);
@@ -134,7 +141,7 @@ public class DustTemplateEngineTest {
         String compiled = engine.compile("test", source);
         assertThat(
                 compiled,
-                is("(function(){dust.register(\"test\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx.get(\"name\"),ctx,\"h\").write(\" World!\");}return body_0;})();"));
+                is("(function(){dust.register(\"test\",body_0);function body_0(chk,ctx){return chk.write(\"Hello \").reference(ctx._get(false, [\"name\"]),ctx,\"h\").write(\" World!\");}return body_0;})();"));
 
         // load
         engine.load("t1", compiled);
