@@ -7,6 +7,7 @@ import framewise.dustview.core.DustTemplateEngine;
 import framewise.dustview.support.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.support.RequestContext;
@@ -14,6 +15,8 @@ import org.springframework.web.servlet.view.JstlView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,6 +55,7 @@ public class SimpleDustTemplateView extends JstlView {
     private DustViewErrorHandler errorHandler = new DefaultDustViewErrorHandler();
 
     private DustViewInitializer initializer = new SimpleDustViewInitializer();
+    private boolean multiLoad = false;
 
     /**
      * Default Constructor
@@ -84,8 +88,7 @@ public class SimpleDustTemplateView extends JstlView {
 
         // load template source
         String viewPath = getViewPath(mergedOutputModel);
-        boolean isRefresh = getRefreshParam(templateKey, request);
-        loadTemplateSource(templateKey, viewPath, isRefresh);
+        loadTemplateSource(request, templateKey, viewPath);
 
         // rendering view
         String renderHtml = renderingView(templateKey, json);
@@ -105,6 +108,21 @@ public class SimpleDustTemplateView extends JstlView {
         bindingResult(mergedOutputModel, json, renderHtml);
 
         return mergedOutputModel;
+    }
+
+    void loadTemplateSource(HttpServletRequest request, String templateKey, String viewPath) {
+        boolean isRefresh = getRefreshParam(templateKey, request);
+        boolean isSuccessMultiLoad = false;
+        if (isMultiLoad()) {
+            isSuccessMultiLoad = loadMultiTemplateSource(templateKey, viewPath, isRefresh);
+        }
+        if (isSingleLoad(isSuccessMultiLoad)) {
+            loadSingleTemplateSource(templateKey, viewPath, isRefresh);
+        }
+    }
+
+    private boolean isSingleLoad(boolean isSuccessMultiLoad) {
+        return !isMultiLoad() && !isSuccessMultiLoad;
     }
 
     /**
@@ -138,21 +156,21 @@ public class SimpleDustTemplateView extends JstlView {
      * @param isRefresh
      * @return
      */
-    protected boolean loadTemplateSource(String templateKey, String viewPath, boolean isRefresh) {
+    protected boolean loadSingleTemplateSource(String templateKey, String viewPath, boolean isRefresh) {
         String templateSource = null;
         boolean useCache = false;
         if (isCaching(isRefresh, templateKey)) {
             templateSource = viewSourceCacheProvider.get(templateKey);
 
             if (logger.isDebugEnabled()) {
-                logger.debug("Using cached view resource(templatekey: " + templateKey + ", viewPath: " + viewPath + ")");
+                logger.debug("Using cached view resource(templateKey: " + templateKey + ", viewPath: " + viewPath + ")");
             }
             useCache = true;
         } else {
             templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
             if (logger.isDebugEnabled()) {
-                logger.debug("Load new view resource (templatekey: " + templateKey + ", viewPath: " + viewPath + ")");
+                logger.debug("Load new view resource (templateKey: " + templateKey + ", viewPath: " + viewPath + ")");
             }
 
             if (viewCacheable) {
@@ -161,6 +179,30 @@ public class SimpleDustTemplateView extends JstlView {
         }
         loadResourceToScriptEngine(templateKey, viewPath, templateSource);
         return useCache;
+    }
+
+    boolean loadMultiTemplateSource(String templateKey, String viewPath, boolean isRefresh) {
+        ClassPathResource resource = new ClassPathResource(viewPath);
+        try {
+            File directory = resource.getFile();
+            if (directory.exists() && directory.isDirectory()) {
+                logger.debug("Load multiple template source.");
+                File[] files = directory.listFiles();
+
+                for (int index = 0; index < files.length; index++) {
+                    String name = files[index].getName();
+                    loadSingleTemplateSource(name.replace(".html", ""), viewPath + File.separator + name, isRefresh);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Request to load to template(index: " + index + ", templateKey: " + name + ")");
+                    }
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } catch (IOException e) {
+            throw new DustViewException(e);
+        }
     }
 
     void loadResourceToScriptEngine(String templateKey, String viewPath, String templateSource) {
@@ -465,5 +507,13 @@ public class SimpleDustTemplateView extends JstlView {
 
     public void setCompiled(boolean compiled) {
         this.compiled = compiled;
+    }
+
+    public boolean isMultiLoad() {
+        return multiLoad;
+    }
+
+    public void setMultiLoad(boolean multiLoad) {
+        this.multiLoad = multiLoad;
     }
 }

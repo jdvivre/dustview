@@ -7,10 +7,12 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -93,28 +95,28 @@ public class SimpleDustTemplateViewTest {
             }
         });
         // new - first call
-        boolean result = v.loadTemplateSource(templateKey, viewPath, false);
+        boolean result = v.loadSingleTemplateSource(templateKey, viewPath, false);
         assertThat(result, is(false));
 
         // cached src
-        result = v.loadTemplateSource(templateKey, viewPath, false);
+        result = v.loadSingleTemplateSource(templateKey, viewPath, false);
         assertThat(result, is(true));
 
         // new - refresh call
-        result = v.loadTemplateSource(templateKey, viewPath, true);
+        result = v.loadSingleTemplateSource(templateKey, viewPath, true);
         assertThat(result, is(false));
 
         // cached src
-        result = v.loadTemplateSource(templateKey, viewPath, false);
+        result = v.loadSingleTemplateSource(templateKey, viewPath, false);
         assertThat(result, is(true));
 
         // disable cache
         v.setViewCacheable(false);
-        result = v.loadTemplateSource(templateKey, viewPath, true);
+        result = v.loadSingleTemplateSource(templateKey, viewPath, true);
         assertThat(result, is(false));
 
         v.setViewCacheable(false);
-        result = v.loadTemplateSource(templateKey, viewPath, false);
+        result = v.loadSingleTemplateSource(templateKey, viewPath, false);
         assertThat(result, is(false));
     }
 
@@ -199,6 +201,50 @@ public class SimpleDustTemplateViewTest {
         v.setCompiled(true);
         v.loadResourceToScriptEngine(key, "path", source);
         verify(mock).load(key, source);
+    }
+
+    @Test
+    public void loadMultipleTemplate() throws IOException {
+        //init
+        v.setViewTemplateLoader(new ClasspathSupportFileSystemDustTemplateLoader());
+        v.setCompiled(false);
+
+        String masterKey = "master";
+        String path = "/template/multiple";
+
+        v.loadMultiTemplateSource(masterKey, path, false);
+        String view = v.renderingView(masterKey, "{}");
+
+        assertEquals("<h1>master</h1><h1>partial1</h1><h1>partial2</h1>", view);
+    }
+
+    @Test
+    public void loadSingleAndMultiTemplate() {
+        //init
+        v.setViewTemplateLoader(new ClasspathSupportFileSystemDustTemplateLoader());
+        v.setCompiled(false);
+        v.setMultiLoad(true);
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+
+        // multi load
+        String templateKey = "master";
+        String path = "/template/multiple";
+
+        v.loadTemplateSource(request, templateKey, path);
+        String view = v.renderingView(templateKey, "{}");
+
+        assertEquals("<h1>master</h1><h1>partial1</h1><h1>partial2</h1>", view);
+
+        // single load
+        templateKey = "partial1";
+        path = "/template/multiple/partial1.html";
+
+        v.loadTemplateSource(request, templateKey, path);
+        view = v.renderingView(templateKey, "{}");
+
+        assertEquals("<h1>partial1</h1>", view);
+
     }
 
     static class MockTemplateLoader implements DustTemplateLoader {

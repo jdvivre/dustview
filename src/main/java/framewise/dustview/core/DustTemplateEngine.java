@@ -32,11 +32,11 @@ public class DustTemplateEngine {
     private static final String DEFAULT_RENDER_SCRIPT =
             "function dustRender(templateKey, _writer, _error, json) {" +
                     "return dust.render(templateKey,JSON.parse(json)," +
-                        "function(err, out){" +
-                            "if(out){ _writer.write(out); }" +
-                            "if(err){ _error.write(err); }" +
-                        "}" +
-                        ");" +
+                    "function(err, out){" +
+                    "if(out){ _writer.write(out); }" +
+                    "if(err){ _error.write(err); }" +
+                    "}" +
+                    ");" +
                     "}";
 
     private static final String DEFAULT_ENCODING = "UTF-8";
@@ -240,18 +240,18 @@ public class DustTemplateEngine {
      * Rendering Markup. result is binded to Markup with JSON data.
      * Result is plain text HTML markup, then will write to {@link Writer} object.
      *
-     * @param writer
+     * @param responseWriter
      * @param errorWriter
      * @param templateKey
      * @param json
      */
-    public void render(Writer writer, StringWriter errorWriter, String templateKey, String json) {
+    public void render(Writer responseWriter, StringWriter errorWriter, String templateKey, String json) {
         final Context context = Context.enter();
         try {
             context.setOptimizationLevel(optimizationLevel);
 
             Function fct = (Function) globalScope.get("dustRender", globalScope);
-            fct.call(context, globalScope, globalScope, new Object[]{templateKey, writer, errorWriter, json});
+            fct.call(context, globalScope, globalScope, new Object[]{templateKey, responseWriter, errorWriter, json});
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when Rendering Dust JS Source", e);
         } finally {

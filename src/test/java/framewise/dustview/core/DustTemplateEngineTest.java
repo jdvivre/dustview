@@ -1,6 +1,5 @@
 package framewise.dustview.core;
 
-import framewise.dustview.core.DustTemplateEngine;
 import org.junit.Test;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -11,7 +10,9 @@ import java.io.StringWriter;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for DustTemplateEngine class
@@ -170,6 +171,26 @@ public class DustTemplateEngineTest {
         } finally {
             Context.exit();
         }
+    }
 
+    @Test
+    public void loadMultiPartial() {
+        DustTemplateEngine e = new DustTemplateEngine();
+
+        String masterKey = "masterDust";
+        String partial1Key = "partial1";
+        String partial2Key = "partial2";
+        String masterDust = e.compile(masterKey, "<h1>masterDust</h1>{>partial1/}{>partial2/}");
+        String partial1Dust = e.compile(partial1Key, "<h1>partial1</h1>");
+        String partial2Dust = e.compile(partial2Key, "<h1>partial2</h1>");
+
+        assertTrue(e.load(masterKey, masterDust));
+        assertTrue(e.load(partial1Key, partial1Dust));
+        assertTrue(e.load(partial2Key, partial2Dust));
+
+        StringWriter response = new StringWriter();
+        e.render(response, new StringWriter(), masterKey, "{\"name\":\"value\"}");
+
+        assertEquals("<h1>masterDust</h1><h1>partial1</h1><h1>partial2</h1>", response.toString());
     }
 }
