@@ -212,7 +212,7 @@ public class SimpleDustTemplateViewTest {
         String masterKey = "master";
         String path = "/template/multiple";
 
-        v.loadMultiTemplateSource(masterKey, path, false);
+        v.loadMultiTemplateSource(path, false);
         String view = v.renderingView(masterKey, "{}");
 
         assertEquals("<h1>master</h1><h1>partial1</h1><h1>partial2</h1>", view);
