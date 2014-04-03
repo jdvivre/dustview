@@ -114,7 +114,7 @@ public class SimpleDustTemplateView extends JstlView {
         boolean isRefresh = getRefreshParam(templateKey, request);
         boolean isSuccessMultiLoad = false;
         if (isMultiLoad()) {
-            isSuccessMultiLoad = loadMultiTemplateSource(templateKey, viewPath, isRefresh);
+            isSuccessMultiLoad = loadMultiTemplateSource(viewPath, isRefresh);
         }
         if (isSingleLoad(isSuccessMultiLoad)) {
             loadSingleTemplateSource(templateKey, viewPath, isRefresh);
@@ -181,12 +181,12 @@ public class SimpleDustTemplateView extends JstlView {
         return useCache;
     }
 
-    boolean loadMultiTemplateSource(String templateKey, String viewPath, boolean isRefresh) {
+    boolean loadMultiTemplateSource(String viewPath, boolean isRefresh) {
         ClassPathResource resource = new ClassPathResource(viewPath);
         try {
             File directory = resource.getFile();
             if (directory.exists() && directory.isDirectory()) {
-                logger.debug("Load multiple template source.");
+                logger.debug("Load multiple template source.(folder path: " + directory.getPath() + ")");
                 File[] files = directory.listFiles();
 
                 for (int index = 0; index < files.length; index++) {
