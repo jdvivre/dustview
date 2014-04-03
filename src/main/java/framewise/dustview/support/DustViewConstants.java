@@ -21,4 +21,5 @@ public class DustViewConstants {
     public static final String VIEW_CACHEABLE = "_VIEW_CACHE";
     public static final String DUST_COMPILED = "_DUST_COMPILED";
     public static final String DUST_ENGINE_OBJECT = "_DUST_ENGINE_OBJECT";
+    public static final String MULTI_LOAD = "_MULTI_LOAD";
 }

@@ -49,13 +49,13 @@ public class SimpleDustTemplateView extends JstlView {
     private boolean mergePath = true;
 
     private boolean compiled = true;
+    private boolean multiLoad = false;
 
     private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
 
     private DustViewErrorHandler errorHandler = new DefaultDustViewErrorHandler();
 
     private DustViewInitializer initializer = new SimpleDustViewInitializer();
-    private boolean multiLoad = false;
 
     /**
      * Default Constructor
