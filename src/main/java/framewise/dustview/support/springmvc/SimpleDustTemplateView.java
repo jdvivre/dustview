@@ -21,6 +21,8 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import static framewise.dustview.support.DustViewConstants.*;
+
 /**
  * This class is support to rendering with dust.js on server-side.
  *
@@ -58,6 +60,11 @@ public class SimpleDustTemplateView extends JstlView {
     private DustViewInitializer initializer = new SimpleDustViewInitializer();
 
     /**
+     * Resolve template file path by using JSP View url
+     */
+    private Map<String, String> urlToViewPathCache = new HashMap<String, String>();
+
+    /**
      * Default Constructor
      */
     public SimpleDustTemplateView() {
@@ -87,7 +94,7 @@ public class SimpleDustTemplateView extends JstlView {
         String json = createJson(templateKey, mergedOutputModel);
 
         // load template source
-        String viewPath = getViewPath(mergedOutputModel);
+        String viewPath = getViewPath(mergedOutputModel, request);
         loadTemplateSource(request, templateKey, viewPath);
 
         // rendering view
@@ -97,11 +104,11 @@ public class SimpleDustTemplateView extends JstlView {
 
         if (logger.isDebugEnabled()) {
             logger.debug("[Dust View Rendering Result] " +
-                    "\n1) TemplateKey: " + templateKey +
-                    "\n2) Template File Path: " + viewPath +
-                    "\n3) Compiled HTML: " + viewPath +
-                    "\n4) JSON: " + json +
-                    "\n5) Final Rendering HTML: " + renderHtml
+                            "\n1) TemplateKey: " + templateKey +
+                            "\n2) Template File Path: " + viewPath +
+                            "\n3) Compiled HTML: " + viewPath +
+                            "\n4) JSON: " + json +
+                            "\n5) Final Rendering HTML: " + renderHtml
             );
         }
 
@@ -112,17 +119,20 @@ public class SimpleDustTemplateView extends JstlView {
 
     void loadTemplateSource(HttpServletRequest request, String templateKey, String viewPath) {
         boolean isRefresh = getRefreshParam(templateKey, request);
-        boolean isSuccessMultiLoad = false;
-        if (isMultiLoad()) {
-            isSuccessMultiLoad = loadMultiTemplateSource(viewPath, isRefresh);
-        }
-        if (isSingleLoad(isSuccessMultiLoad)) {
+        //TODO marge: single&multi load
+        if (isMultiLoadRequest(request)) {
+            loadMultiTemplateSource(viewPath, isRefresh);
+        } else {
             loadSingleTemplateSource(templateKey, viewPath, isRefresh);
         }
     }
 
-    private boolean isSingleLoad(boolean isSuccessMultiLoad) {
-        return !isMultiLoad() && !isSuccessMultiLoad;
+    public boolean isMultiLoadRequest(HttpServletRequest request) {
+        Object result = request.getAttribute(MULTI_LOAD_REQUEST);
+        if (isMultiLoad() && result != null && result instanceof Boolean && result == true) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -198,7 +208,7 @@ public class SimpleDustTemplateView extends JstlView {
                 }
                 return true;
             } else {
-                return false;
+                throw new DustViewException("Could not load template because not exist!(viewPath: " + viewPath + ")");
             }
         } catch (IOException e) {
             throw new DustViewException(e);
@@ -315,7 +325,7 @@ public class SimpleDustTemplateView extends JstlView {
      * @param model
      * @return
      */
-    protected String getViewPath(Map<String, ?> model) {
+    protected String getViewPath(Map<String, ?> model, HttpServletRequest request) {
         //Case 1. full view path
         Object viewPath = model.get(DustViewConstants.VIEW_PATH_OVERRIDE);
         if (viewPath != null) {
@@ -334,6 +344,22 @@ public class SimpleDustTemplateView extends JstlView {
             viewPath = resolveViewPathInProperties((String) viewPathKey);
             return (String) viewPath;
         }
+
+        // Case 4. default view path if multiload
+        if (viewPath == null && isMultiLoad()) {
+
+            request.setAttribute(MULTI_LOAD_REQUEST, true);
+
+            String url = getUrl();
+            if (urlToViewPathCache.containsKey(url)) {
+                return urlToViewPathCache.get(url);
+            } else {
+                String viewFolderPath = new File(url).getParent();
+                urlToViewPathCache.put(url, viewFolderPath);
+                return viewFolderPath;
+            }
+        }
+
         throw new IllegalArgumentException("View file path must require! param name is " + DustViewConstants.VIEW_FILE_PATH);
     }
 

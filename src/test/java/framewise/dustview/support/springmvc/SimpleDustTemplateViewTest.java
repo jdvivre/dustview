@@ -1,21 +1,22 @@
 package framewise.dustview.support.springmvc;
 
+import framewise.dustview.DustViewException;
 import framewise.dustview.core.DustTemplateEngine;
 import framewise.dustview.support.DustTemplateLoader;
 import framewise.dustview.support.DustViewConstants;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.ui.ModelMap;
 
 import java.io.IOException;
 import java.util.HashMap;
 
+import static framewise.dustview.support.DustViewConstants.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-
 
 /**
  * @author chanwook
@@ -219,13 +220,14 @@ public class SimpleDustTemplateViewTest {
     }
 
     @Test
-    public void loadSingleAndMultiTemplate() {
+    public void loadMultiTemplate() {
         //init
         v.setViewTemplateLoader(new ClasspathSupportFileSystemDustTemplateLoader());
         v.setCompiled(false);
         v.setMultiLoad(true);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setAttribute(MULTI_LOAD_REQUEST, true);
 
         // multi load
         String templateKey = "master";
@@ -236,15 +238,61 @@ public class SimpleDustTemplateViewTest {
 
         assertEquals("<h1>master</h1><h1>partial1</h1><h1>partial2</h1>", view);
 
-        // single load
-        templateKey = "partial1";
-        path = "/template/multiple/partial1.html";
+        // multi load, but not has file
+        templateKey = "master";
+        path = "/template/nofile";
 
-        v.loadTemplateSource(request, templateKey, path);
-        view = v.renderingView(templateKey, "{}");
+        try {
+            v.loadTemplateSource(request, templateKey, path);
+            fail("Need throw exception!!");
+        } catch (DustViewException de) {
+            //success!!
+        }
+    }
+
+    @Test
+    public void loadSingleTemplate() {
+        v.setViewTemplateLoader(new ClasspathSupportFileSystemDustTemplateLoader());
+        v.setCompiled(false);
+        v.setMultiLoad(false);
+
+        String templateKey = "partial1";
+        String path = "/template/multiple/partial1.html";
+
+        v.loadTemplateSource(new MockHttpServletRequest(), templateKey, path);
+        String view = v.renderingView(templateKey, "{}");
 
         assertEquals("<h1>partial1</h1>", view);
+    }
 
+
+    @Test
+    public void loadViewPathByJspFilePath() {
+        v.setViewTemplateLoader(new ClasspathSupportFileSystemDustTemplateLoader());
+        v.setCompiled(false);
+        v.setMultiLoad(true);
+
+        v.setUrl("/template/jsppath/test.jsp");
+
+        ModelMap model = new ModelMap();
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        String viewPath = v.getViewPath(model, request);
+
+        assertEquals("/template/jsppath", viewPath);
+        assertEquals(true, request.getAttribute(MULTI_LOAD_REQUEST));
+    }
+
+    @Test
+    public void resolveTemplateKey() {
+        ModelMap model = new ModelMap();
+        // 1. send key
+        model.put(TEMPLATE_KEY, "key1");
+        assertEquals("key1", v.getDustTemplateKey(model));
+
+        // 2. don't send key
+        model.remove(TEMPLATE_KEY);
+        assertNull(v.getDustTemplateKey(model));
     }
 
     static class MockTemplateLoader implements DustTemplateLoader {
