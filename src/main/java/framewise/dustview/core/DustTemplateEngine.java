@@ -199,7 +199,7 @@ public class DustTemplateEngine {
     public boolean load(String templateKey, String compiledSource) {
         if (isLoad(templateKey, compiledSource)) {
             if (logger.isDebugEnabled()) {
-                logger.info("Not load to browser engine (because using compiled source cache!! (templateKey: " + templateKey + ")");
+                logger.debug("Not load to browser engine (because using compiled source cache!! (templateKey: " + templateKey + ")");
             }
             return false;
         }
@@ -220,6 +220,7 @@ public class DustTemplateEngine {
             if (logger.isInfoEnabled()) {
                 logger.info("Add to compiled resource to cache! (templateKey: " + templateKey + ")");
             }
+
             compiledSourceCache.put(templateKey, compiledSource);
             return true;
         } catch (JavaScriptException e) {

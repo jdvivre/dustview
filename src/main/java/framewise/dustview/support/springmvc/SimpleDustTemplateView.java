@@ -21,7 +21,7 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import static framewise.dustview.support.DustViewConstants.*;
+import static framewise.dustview.support.DustViewConstants.MULTI_LOAD_REQUEST;
 
 /**
  * This class is support to rendering with dust.js on server-side.
@@ -52,6 +52,9 @@ public class SimpleDustTemplateView extends JstlView {
 
     private boolean compiled = true;
     private boolean multiLoad = false;
+    private boolean commonLoad = false;
+
+    private String commonViewPath;
 
     private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
 
@@ -70,8 +73,8 @@ public class SimpleDustTemplateView extends JstlView {
     public SimpleDustTemplateView() {
     }
 
-    public SimpleDustTemplateView(boolean isInitializEngine) {
-        if (isInitializEngine) {
+    public SimpleDustTemplateView(boolean isInitializing) {
+        if (isInitializing) {
             this.dustEngine.initializeContext();
         }
     }
@@ -129,7 +132,7 @@ public class SimpleDustTemplateView extends JstlView {
 
     public boolean isMultiLoadRequest(HttpServletRequest request) {
         Object result = request.getAttribute(MULTI_LOAD_REQUEST);
-        if (isMultiLoad() && result != null && result instanceof Boolean && result == true) {
+        if (isMultiLoad() || (result != null && result instanceof Boolean && result == true)) {
             return true;
         }
         return false;
@@ -418,11 +421,36 @@ public class SimpleDustTemplateView extends JstlView {
         super.afterPropertiesSet();
 
         initializer.initializeViewProperty(getAttributesMap(), this);
+
         // re-initializing context because change attribute!
         getDustEngine().initializeContext();
+
+        if (isCommonLoading()) {
+            loadCommonTemplateSource();
+        }
+    }
+
+    void loadCommonTemplateSource() {
+        if (logger.isInfoEnabled()) {
+            logger.info("Load common template source(common view path: " + commonViewPath + ")");
+        }
+        //TODO 커먼 경로 받기
+        loadMultiTemplateSource(commonViewPath, true);
     }
 
     /* -- Getter & Setter -- */
+    public String getCommonViewPath() {
+        return commonViewPath;
+    }
+
+    public void setCommonViewPath(String commonViewPath) {
+        this.commonViewPath = commonViewPath;
+    }
+
+    private boolean isCommonLoading() {
+        return StringUtils.hasText(this.commonViewPath);
+    }
+
     public ObjectMapper getJsonMapper() {
         return jsonMapper;
     }

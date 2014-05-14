@@ -295,6 +295,72 @@ public class SimpleDustTemplateViewTest {
         assertNull(v.getDustTemplateKey(model));
     }
 
+    @Test
+    public void isMultiLoad() {
+        v.setMultiLoad(true);
+        assertTrue(v.isMultiLoadRequest(new MockHttpServletRequest()));
+
+        v.setMultiLoad(false);
+        assertFalse(v.isMultiLoadRequest(new MockHttpServletRequest()));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setAttribute(MULTI_LOAD_REQUEST, true);
+        assertTrue(v.isMultiLoadRequest(request));
+
+        request = new MockHttpServletRequest();
+        request.setAttribute(MULTI_LOAD_REQUEST, false);
+        assertFalse(v.isMultiLoadRequest(request));
+    }
+
+    @Test
+    public void cacheOffTest() throws Exception {
+        HashMap<String, Object> attrMap = new HashMap<String, Object>();
+        attrMap.put(TEMPLATE_LOADER, new DustTemplateLoader() {
+            @Override
+            public String loadTemplate(String templatePath) {
+                return "<html><html>";
+            }
+        });
+        attrMap.put("_VIEW_PATH_PREFIX", "../view/");
+        attrMap.put("_VIEW_PATH_SUFFIX", "");
+        attrMap.put("_VIEW_SOURCE", "view");
+        attrMap.put("_CACHE_PROVIDER", "viewSourceCacheProvider");
+        attrMap.put("_VIEW_CACHE", "false");
+        attrMap.put("_DUST_EXTENSION_JS_FILE_PATH", "/dust/dust-extension-test.js");
+        attrMap.put("_DUST_JS_HELPER_FILE_PATH", "/dust/dust-helpers-1.1.1.js");
+        attrMap.put("_DUST_JS_CORE_FILE_PATH", "/dust/dust-full-1.1.1.js");
+        attrMap.put("_DUST_COMPILED", "false");
+        attrMap.put("_MULTI_LOAD", "true");
+
+        v.setAttributesMap(attrMap);
+        v.afterPropertiesSet();
+
+        // first call
+        boolean result = v.loadSingleTemplateSource("test01", "/template/multiple", false);
+        assertFalse(result);
+
+        // second call
+        result = v.loadSingleTemplateSource("test01", "/template/multiple", false);
+        assertFalse(result);
+    }
+
+    @Test
+    public void loadCommonTemplateLoad() throws Exception {
+        HashMap<String, Object> attrMap = new HashMap<String, Object>();
+        attrMap.put(DustViewConstants.COMMON_VIEW_PATH, "/template/common/");
+        v.setAttributesMap(attrMap);
+        v.setViewTemplateLoader(new ClasspathSupportFileSystemDustTemplateLoader());
+        v.setCompiled(false);
+
+        v.afterPropertiesSet();
+
+        String templateKey = "commontest";
+        v.loadSingleTemplateSource(templateKey, "/template/commontest.html", true);
+
+        String html = v.renderingView(templateKey, "{}");
+        assertEquals("<p>Common-Test</p><h1>Common1</h1><h1>Common2</h1>", html);
+    }
+
     static class MockTemplateLoader implements DustTemplateLoader {
         @Override
         public String loadTemplate(String templatePath) {

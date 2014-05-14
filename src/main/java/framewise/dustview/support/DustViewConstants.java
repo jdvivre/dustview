@@ -23,4 +23,5 @@ public class DustViewConstants {
     public static final String DUST_ENGINE_OBJECT = "_DUST_ENGINE_OBJECT";
     public static final String MULTI_LOAD = "_MULTI_LOAD";
     public static final String MULTI_LOAD_REQUEST = "_MULTI_LOAD_REQUEST";
+    public static final String COMMON_VIEW_PATH = "_COMMON_VIEW_PATH";
 }

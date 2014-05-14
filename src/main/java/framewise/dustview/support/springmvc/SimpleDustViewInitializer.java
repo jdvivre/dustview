@@ -74,6 +74,12 @@ public class SimpleDustViewInitializer implements DustViewInitializer {
             view.getDustEngine().setDustExtensionFilePath(filePath);
         }
 
+        if (attributesMap.get(COMMON_VIEW_PATH) != null &&
+                attributesMap.get(COMMON_VIEW_PATH) instanceof String) {
+            String commonViewPath = (String) attributesMap.get(COMMON_VIEW_PATH);
+            view.setCommonViewPath(commonViewPath);
+        }
+
         if (attributesMap.get(DUST_ENGINE_OBJECT) != null &&
                 attributesMap.get(DUST_ENGINE_OBJECT) instanceof DustTemplateEngine) {
             DustTemplateEngine engine = (DustTemplateEngine) attributesMap.get(DUST_ENGINE_OBJECT);
