@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.support.RequestContext;
@@ -11,6 +12,8 @@ import org.springframework.web.servlet.view.JstlView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +27,7 @@ public class SimpleDustTemplateView extends JstlView {
 
     private final Logger logger = LoggerFactory.getLogger(SimpleDustTemplateView.class);
 
+    /* View Constant */
     public static final String DEFAULT_VIEW_ENCODING = "UTF-8";
     public static final String DEFAULT_EXPORT_VIEW_SOURCE_KEY = "_view";
     public static final String DEFAULT_EXPORT_JSON_KEY = "_json";
@@ -47,6 +51,10 @@ public class SimpleDustTemplateView extends JstlView {
     public static final String DUST_COMPILED = "_DUST_COMPILED";
     public static final String DUST_ENGINE_OBJECT = "_DUST_ENGINE_OBJECT";
 
+    public static final String MULTI_LOAD = "_MULTI_LOAD";
+    public static final String MULTI_LOAD_REQUEST = "_MULTI_LOAD_REQUEST";
+    public static final String COMMON_VIEW_PATH = "_COMMON_VIEW_PATH";
+    /* View Constant */
 
     private ObjectMapper jsonMapper = new ObjectMapper();
     private DustTemplateEngine dustEngine = new DustTemplateEngine(false);
@@ -63,12 +71,21 @@ public class SimpleDustTemplateView extends JstlView {
     private boolean mergePath = true;
 
     private boolean compiled = true;
+    private boolean multiLoad = false;
+    private boolean commonLoad = false;
+
+    private String commonViewPath;
 
     private ViewSourceCacheProvider viewSourceCacheProvider = new InMemoryViewSourceCacheProvider();
 
     private DustViewErrorHandler errorHandler = new DefaultDustViewErrorHandler();
 
     private DustViewInitializer initializer = new SimpleDustViewInitializer();
+
+    /**
+     * Resolve template file path by using JSP View url
+     */
+    private Map<String, String> urlToViewPathCache = new HashMap<String, String>();
 
     /**
      * Default Constructor
@@ -91,7 +108,7 @@ public class SimpleDustTemplateView extends JstlView {
         String templateKey = getDustTemplateKey(mergedOutputModel);
         if (!StringUtils.hasText(templateKey)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("TemplateKey not found! Then pass to next view.");
+                logger.debug("TemplateKey not found! Then do not execute for dust binding!");
             }
             return mergedOutputModel;
         }
@@ -100,9 +117,8 @@ public class SimpleDustTemplateView extends JstlView {
         String json = createJson(templateKey, mergedOutputModel);
 
         // load template source
-        boolean isRefresh = getRefreshParam(templateKey, request);
-        String viewPath = getViewPath(mergedOutputModel);
-        loadTemplateSource(templateKey, viewPath, isRefresh);
+        String viewPath = getViewPath(mergedOutputModel, request);
+        loadTemplateSource(request, templateKey, viewPath);
 
         // rendering view
         String renderHtml = renderingView(templateKey, json);
@@ -111,11 +127,11 @@ public class SimpleDustTemplateView extends JstlView {
 
         if (logger.isDebugEnabled()) {
             logger.debug("[Dust View Rendering Result] " +
-                    "\n1) TemplateKey: " + templateKey +
-                    "\n2) Template File Path: " + viewPath +
-                    "\n3) Compiled HTML: " + viewPath +
-                    "\n4) JSON: " + json +
-                    "\n5) Final Rendering HTML: " + renderHtml
+                            "\n1) TemplateKey: " + templateKey +
+                            "\n2) Template File Path: " + viewPath +
+                            "\n3) Compiled HTML: " + viewPath +
+                            "\n4) JSON: " + json +
+                            "\n5) Final Rendering HTML: " + renderHtml
             );
         }
 
@@ -124,6 +140,33 @@ public class SimpleDustTemplateView extends JstlView {
         return mergedOutputModel;
     }
 
+    void loadTemplateSource(HttpServletRequest request, String templateKey, String viewPath) {
+        boolean isRefresh = getRefreshParam(templateKey, request);
+        //TODO marge: single&multi load
+        if (isMultiLoadRequest(request)) {
+            loadMultiTemplateSource(viewPath, isRefresh);
+        } else {
+            loadSingleTemplateSource(templateKey, viewPath, isRefresh);
+        }
+    }
+
+    public boolean isMultiLoadRequest(HttpServletRequest request) {
+        Object result = request.getAttribute(MULTI_LOAD_REQUEST);
+        if (isMultiLoad() || (result != null && result instanceof Boolean && ((Boolean) result) == true)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * This method is pre step for rendering.
+     * Commonly this contains for relation to Spring framework code.
+     *
+     * @param model
+     * @param request
+     * @param res
+     * @return
+     */
     private Map<String, Object> prepareToRendering(Map<String, ? extends Object> model, HttpServletRequest request, HttpServletResponse res) {
         Map<String, Object> mergedOutputModel = new HashMap<String, Object>();
         mergedOutputModel.putAll(super.createMergedOutputModel(model, request, res));
@@ -131,28 +174,36 @@ public class SimpleDustTemplateView extends JstlView {
         return mergedOutputModel;
     }
 
-    protected void bindingResult(Map<String, Object> mergedOutputModel, String json, String renderHtml) {
-        mergedOutputModel.put(this.exportViewSourceKey, renderHtml);
+    protected void bindingResult(Map<String, Object> mergedOutputModel, String json, String renderView) {
+        mergedOutputModel.put(this.exportViewSourceKey, renderView);
         mergedOutputModel.put(this.exportJsonKey, json);
-        //임시..
-        mergedOutputModel.put("_CONTENT_JSON", json);
     }
 
-    protected boolean loadTemplateSource(String templateKey, String viewPath, boolean isRefresh) {
+    /**
+     * Load dust template source!
+     * This method has core logic.
+     * If not dust compiled html, do compiling for plain HTML!
+     *
+     * @param templateKey
+     * @param viewPath
+     * @param isRefresh
+     * @return
+     */
+    protected boolean loadSingleTemplateSource(String templateKey, String viewPath, boolean isRefresh) {
         String templateSource = null;
         boolean useCache = false;
         if (isCaching(isRefresh, templateKey)) {
             templateSource = viewSourceCacheProvider.get(templateKey);
 
             if (logger.isDebugEnabled()) {
-                logger.debug("Using cached view resource(templatekey: " + templateKey + ", viewPath: " + viewPath + ")");
+                logger.debug("Using cached view resource(templateKey: " + templateKey + ", viewPath: " + viewPath + ")");
             }
             useCache = true;
         } else {
             templateSource = viewTemplateLoader.loadTemplate(viewPath);
 
             if (logger.isDebugEnabled()) {
-                logger.debug("Load new view resource (templatekey: " + templateKey + ", viewPath: " + viewPath + ")");
+                logger.debug("Load new view resource (templateKey: " + templateKey + ", viewPath: " + viewPath + ")");
             }
 
             if (viewCacheable) {
@@ -163,7 +214,31 @@ public class SimpleDustTemplateView extends JstlView {
         return useCache;
     }
 
-    private void loadResourceToScriptEngine(String templateKey, String viewPath, String templateSource) {
+    boolean loadMultiTemplateSource(String viewPath, boolean isRefresh) {
+        ClassPathResource resource = new ClassPathResource(viewPath);
+        try {
+            File directory = resource.getFile();
+            if (directory.exists() && directory.isDirectory()) {
+                logger.debug("Load multiple template source.(folder path: " + directory.getPath() + ")");
+                File[] files = directory.listFiles();
+
+                for (int index = 0; index < files.length; index++) {
+                    String name = files[index].getName();
+                    loadSingleTemplateSource(name.replace(".html", ""), viewPath + File.separator + name, isRefresh);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Request to load to template(index: " + index + ", templateKey: " + name + ")");
+                    }
+                }
+                return true;
+            } else {
+                throw new DustViewException("Could not load template because not exist!(viewPath: " + viewPath + ")");
+            }
+        } catch (IOException e) {
+            throw new DustViewException(e);
+        }
+    }
+
+    void loadResourceToScriptEngine(String templateKey, String viewPath, String templateSource) {
         if (!compiled) {
             //need compile html by dust.js
             if (logger.isDebugEnabled()) {
@@ -178,6 +253,14 @@ public class SimpleDustTemplateView extends JstlView {
         return viewCacheable && viewSourceCacheProvider.isCached(cacheKey) && !isRefresh;
     }
 
+    /**
+     * Create json that used object in model.
+     * Object convert to json string..
+     *
+     * @param templateKey
+     * @param model
+     * @return
+     */
     protected String createJson(String templateKey, Map<String, Object> model) {
         // first tyr for JSON Object!
         Object jsonParam = model.get(CONTENT_KEY);
@@ -215,7 +298,7 @@ public class SimpleDustTemplateView extends JstlView {
     }
 
     /**
-     * Create view source that using DustTemplateEngine
+     * Create final view html that using DustTemplateEngine.
      *
      * @param templateKey
      * @param json
@@ -229,8 +312,8 @@ public class SimpleDustTemplateView extends JstlView {
             // Rendering by DustEngine
             getDustEngine().render(writer, errorWriter, templateKey, json);
 
-            //will throw exception if occurred
-            errorHandler.checkError(templateKey, errorWriter, viewEncoding);
+            // will throw exception if occurred
+            errorHandler.handleError(templateKey, errorWriter, viewEncoding);
 
             String renderedView = new String(writer.getBuffer().toString().getBytes(viewEncoding), viewEncoding);
             return renderedView;
@@ -256,12 +339,22 @@ public class SimpleDustTemplateView extends JstlView {
         res.setCharacterEncoding(viewEncoding);
     }
 
-    protected String getViewPath(Map<String, ?> model) {
+    /**
+     * Resolve view file path with three step!
+     * 1) full view path
+     * 2) merge view path with prefix, suffix
+     * 3) view path in properties
+     *
+     * @param model
+     * @return
+     */
+    protected String getViewPath(Map<String, ?> model, HttpServletRequest request) {
         //Case 1. full view path
         Object viewPath = model.get(VIEW_PATH_OVERRIDE);
         if (viewPath != null) {
             return (String) viewPath;
         }
+
         // Case 2. merge view path with prefix, suffix
         viewPath = model.get(VIEW_FILE_PATH);
         if (viewPath != null) {
@@ -274,6 +367,22 @@ public class SimpleDustTemplateView extends JstlView {
             viewPath = resolveViewPathInProperties((String) viewPathKey);
             return (String) viewPath;
         }
+
+        // Case 4. default view path if multiload
+        if (viewPath == null && isMultiLoad()) {
+
+            request.setAttribute(MULTI_LOAD_REQUEST, true);
+
+            String url = getUrl();
+            if (urlToViewPathCache.containsKey(url)) {
+                return urlToViewPathCache.get(url);
+            } else {
+                String viewFolderPath = new File(url).getParent();
+                urlToViewPathCache.put(url, viewFolderPath);
+                return viewFolderPath;
+            }
+        }
+
         throw new IllegalArgumentException("View file path must require! param name is " + VIEW_FILE_PATH);
     }
 
@@ -293,6 +402,13 @@ public class SimpleDustTemplateView extends JstlView {
         return (String) viewPath;
     }
 
+    /**
+     * Resolve template key in model.
+     * Model had return by controller to created by user
+     *
+     * @param model
+     * @return
+     */
     protected String getDustTemplateKey(Map<String, ?> model) {
         Object templateKey = model.get(TEMPLATE_KEY);
         if (templateKey != null && templateKey instanceof String) {
@@ -325,11 +441,36 @@ public class SimpleDustTemplateView extends JstlView {
         super.afterPropertiesSet();
 
         initializer.initializeViewProperty(getAttributesMap(), this);
+
         // re-initializing context because change attribute!
         getDustEngine().initializeContext();
+
+        if (isCommonLoading()) {
+            loadCommonTemplateSource();
+        }
+    }
+
+    void loadCommonTemplateSource() {
+        if (logger.isInfoEnabled()) {
+            logger.info("Load common template source(common view path: " + commonViewPath + ")");
+        }
+        //TODO 커먼 경로 받기
+        loadMultiTemplateSource(commonViewPath, true);
     }
 
     /* -- Getter & Setter -- */
+    public String getCommonViewPath() {
+        return commonViewPath;
+    }
+
+    public void setCommonViewPath(String commonViewPath) {
+        this.commonViewPath = commonViewPath;
+    }
+
+    private boolean isCommonLoading() {
+        return StringUtils.hasText(this.commonViewPath);
+    }
+
     public ObjectMapper getJsonMapper() {
         return jsonMapper;
     }
@@ -440,5 +581,13 @@ public class SimpleDustTemplateView extends JstlView {
 
     public void setCompiled(boolean compiled) {
         this.compiled = compiled;
+    }
+
+    public boolean isMultiLoad() {
+        return multiLoad;
+    }
+
+    public void setMultiLoad(boolean multiLoad) {
+        this.multiLoad = multiLoad;
     }
 }

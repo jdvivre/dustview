@@ -45,7 +45,7 @@ public class HttpConnectDustTemplateLoader implements DustTemplateLoader {
 
                 return templateSource;
             } catch (Exception e) {
-                throw new DustViewException("Failed to load Dust Tempmlate.", e);
+                throw new DustViewException("Failed to load Dust Template.", e);
             }
         } else {
             throw new DustViewException("View path must start with 'http://~~' statement");

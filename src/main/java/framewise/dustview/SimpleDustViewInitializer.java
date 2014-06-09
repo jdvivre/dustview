@@ -39,14 +39,14 @@ public class SimpleDustViewInitializer implements DustViewInitializer {
 
         if (attributesMap.get(VIEW_CACHEABLE) != null && attributesMap.get(VIEW_CACHEABLE) instanceof String) {
             String cacheable = (String) attributesMap.get(VIEW_CACHEABLE);
-            if ("true".equalsIgnoreCase(cacheable) || "false".equalsIgnoreCase(cacheable)) {
+            if (isBooleanValue(cacheable)) {
                 view.setViewCacheable(Boolean.valueOf(cacheable.toLowerCase()));
             }
         }
 
         if (attributesMap.get(DUST_COMPILED) != null && attributesMap.get(DUST_COMPILED) instanceof String) {
             String compiled = (String) attributesMap.get(DUST_COMPILED);
-            if ("true".equalsIgnoreCase(compiled) || "false".equalsIgnoreCase(compiled)) {
+            if (isBooleanValue(compiled)) {
                 view.setCompiled(Boolean.valueOf(compiled.toLowerCase()));
             }
         }
@@ -69,10 +69,28 @@ public class SimpleDustViewInitializer implements DustViewInitializer {
             view.getDustEngine().setDustExtensionFilePath(filePath);
         }
 
+        if (attributesMap.get(COMMON_VIEW_PATH) != null &&
+                attributesMap.get(COMMON_VIEW_PATH) instanceof String) {
+            String commonViewPath = (String) attributesMap.get(COMMON_VIEW_PATH);
+            view.setCommonViewPath(commonViewPath);
+        }
+
         if (attributesMap.get(DUST_ENGINE_OBJECT) != null &&
                 attributesMap.get(DUST_ENGINE_OBJECT) instanceof DustTemplateEngine) {
             DustTemplateEngine engine = (DustTemplateEngine) attributesMap.get(DUST_ENGINE_OBJECT);
             view.setDustEngine(engine);
         }
+
+        if (attributesMap.get(MULTI_LOAD) != null && attributesMap.get(MULTI_LOAD) instanceof String) {
+            String multiLoad = (String) attributesMap.get(MULTI_LOAD);
+            if (isBooleanValue(multiLoad)) {
+                view.setMultiLoad(Boolean.valueOf(multiLoad.toLowerCase()));
+            }
+        }
     }
+
+    private boolean isBooleanValue(String value) {
+        return "true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value);
+    }
+
 }
