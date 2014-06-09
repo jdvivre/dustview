@@ -21,6 +21,7 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import static framewise.dustview.support.DustViewConstants.COMMON_FILE_EXTENSION_NAME;
 import static framewise.dustview.support.DustViewConstants.MULTI_LOAD_REQUEST;
 
 /**
@@ -204,10 +205,18 @@ public class SimpleDustTemplateView extends JstlView {
 
                 for (int index = 0; index < files.length; index++) {
                     String name = files[index].getName();
-                    loadSingleTemplateSource(name.replace(".html", ""), viewPath + File.separator + name, isRefresh);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Request to load to template(index: " + index + ", templateKey: " + name + ")");
+
+                    if (name.contains(COMMON_FILE_EXTENSION_NAME)) {
+                        loadSingleTemplateSource(name.replace(COMMON_FILE_EXTENSION_NAME, ""), viewPath + File.separator + name, isRefresh);
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Request to load to template(index: " + index + ", templateKey: " + name + ", name: " + name + ")");
+                        }
+                    } else {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("Ignore loading to '" + name + "' file. This file is not " + COMMON_FILE_EXTENSION_NAME + "format!");
+                        }
                     }
+
                 }
                 return true;
             } else {
@@ -434,7 +443,6 @@ public class SimpleDustTemplateView extends JstlView {
         if (logger.isInfoEnabled()) {
             logger.info("Load common template source(common view path: " + commonViewPath + ")");
         }
-        //TODO 커먼 경로 받기
         loadMultiTemplateSource(commonViewPath, true);
     }
 

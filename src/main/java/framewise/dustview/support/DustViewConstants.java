@@ -24,4 +24,5 @@ public class DustViewConstants {
     public static final String MULTI_LOAD = "_MULTI_LOAD";
     public static final String MULTI_LOAD_REQUEST = "_MULTI_LOAD_REQUEST";
     public static final String COMMON_VIEW_PATH = "_COMMON_VIEW_PATH";
+    public static final String COMMON_FILE_EXTENSION_NAME = ".html";
 }

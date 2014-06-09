@@ -361,6 +361,23 @@ public class SimpleDustTemplateViewTest {
         assertEquals("<p>Common-Test</p><h1>Common1</h1><h1>Common2</h1>", html);
     }
 
+    @Test
+    public void excludeJspFileWhenLoadCommonDust() throws Exception {
+        HashMap<String, Object> attrMap = new HashMap<String, Object>();
+        attrMap.put(DustViewConstants.COMMON_VIEW_PATH, "/template/common-w-jsp/");
+        v.setAttributesMap(attrMap);
+        v.setViewTemplateLoader(new ClasspathSupportFileSystemDustTemplateLoader());
+        v.setCompiled(false);
+
+        v.afterPropertiesSet();
+
+        String templateKey = "commontest";
+        v.loadSingleTemplateSource(templateKey, "/template/commontest.html", true);
+
+        String html = v.renderingView(templateKey, "{}");
+        assertEquals("<p>Common-Test</p><h1>Common1</h1><h1>Common2</h1>", html);
+    }
+
     static class MockTemplateLoader implements DustTemplateLoader {
         @Override
         public String loadTemplate(String templatePath) {
