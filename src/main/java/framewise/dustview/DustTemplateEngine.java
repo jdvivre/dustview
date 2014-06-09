@@ -47,6 +47,7 @@ public class DustTemplateEngine {
     private String compileScript = DEFAULT_COMPILE_SCRIPT;
     private String loadScript = DEFAULT_LOAD_SCRIPT;
     private String renderScript = DEFAULT_RENDER_SCRIPT;
+
     // value: -1 ~ 9
     private int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 
@@ -91,6 +92,11 @@ public class DustTemplateEngine {
         }
     }
 
+    /**
+     * load javascript file to javascript engine(Rhino).
+     *
+     * @param filePath
+     */
     public void loadScriptFile(String filePath) {
         InputStream fileStream = null;
         Reader fileReader = null;
@@ -141,6 +147,18 @@ public class DustTemplateEngine {
             context.evaluateString(globalScope, loadScript, compileSourceName, 0, null);
             context.evaluateString(globalScope, renderScript, compileSourceName, 0, null);
 
+            if (logger.isDebugEnabled()) {
+                // debugging
+                context.evaluateString(globalScope,
+                        "var console = {\n" +
+                                "  log: function (msg) {\n" +
+                                "    java.lang.System.out.println(msg);\n" +
+                                "  }\n" +
+                                "};", compileSourceName, 0, null);
+                context.evaluateString(globalScope, "dust.isDebug=true;", compileSourceName, 0, null);
+                context.evaluateString(globalScope, "dust.debugLevel='DEBUG';", compileSourceName, 0, null);
+            }
+
         } catch (Exception e) {
             throw new DustViewException("Throwing exception when initialize step for core engine!", e);
         } finally {
@@ -178,7 +196,7 @@ public class DustTemplateEngine {
     public boolean load(String templateKey, String compiledSource) {
         if (isLoad(templateKey, compiledSource)) {
             if (logger.isDebugEnabled()) {
-                logger.info("Not load to browser engine (because using compiled source cache!! (templateKey: " + templateKey + ")");
+                logger.debug("Not load to browser engine (because using compiled source cache!! (templateKey: " + templateKey + ")");
             }
             return false;
         }
@@ -187,8 +205,8 @@ public class DustTemplateEngine {
         try {
             if (logger.isInfoEnabled()) {
                 logger.info("Compiled resource load to script engine! " +
-                        "\n1) templateKey: " + templateKey +
-                        "\n2) compiled HTML: " + compiledSource
+                                "\n1) templateKey: " + templateKey +
+                                "\n2) compiled HTML: " + compiledSource
                 );
             }
 
@@ -197,8 +215,9 @@ public class DustTemplateEngine {
             fct.call(context, globalScope, globalScope, new Object[]{compiledSource});
 
             if (logger.isInfoEnabled()) {
-                logger.info("Add to compiled resource to cache!! (templateKey: " + templateKey + ")");
+                logger.info("Add to compiled resource to cache! (templateKey: " + templateKey + ")");
             }
+
             compiledSourceCache.put(templateKey, compiledSource);
             return true;
         } catch (JavaScriptException e) {
@@ -219,18 +238,18 @@ public class DustTemplateEngine {
      * Rendering Markup. result is binded to Markup with JSON data.
      * Result is plain text HTML markup, then will write to {@link Writer} object.
      *
-     * @param writer
+     * @param responseWriter
      * @param errorWriter
      * @param templateKey
      * @param json
      */
-    public void render(Writer writer, StringWriter errorWriter, String templateKey, String json) {
+    public void render(Writer responseWriter, StringWriter errorWriter, String templateKey, String json) {
         final Context context = Context.enter();
         try {
             context.setOptimizationLevel(optimizationLevel);
 
             Function fct = (Function) globalScope.get("dustRender", globalScope);
-            fct.call(context, globalScope, globalScope, new Object[]{templateKey, writer, errorWriter, json});
+            fct.call(context, globalScope, globalScope, new Object[]{templateKey, responseWriter, errorWriter, json});
         } catch (JavaScriptException e) {
             throw new DustViewException("thrown error when Rendering Dust JS Source", e);
         } finally {
@@ -329,12 +348,12 @@ public class DustTemplateEngine {
 
     /**
      * return initialized script engine object
-     *
+     * <p/>
      * Caution!! This method is for test! Must not use in production!
      *
      * @return
      */
-    Scriptable getGlobalScope(){
+    Scriptable getGlobalScope() {
         return this.globalScope;
     }
 }
