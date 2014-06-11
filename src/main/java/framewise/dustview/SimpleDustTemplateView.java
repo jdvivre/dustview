@@ -178,6 +178,7 @@ public class SimpleDustTemplateView extends JstlView {
     protected void bindingResult(Map<String, Object> mergedOutputModel, String json, String renderView) {
         mergedOutputModel.put(this.exportViewSourceKey, renderView);
         mergedOutputModel.put(this.exportJsonKey, json);
+        mergedOutputModel.put("_CONTENT_JSON", json);
     }
 
     /**
