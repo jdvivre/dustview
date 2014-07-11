@@ -1,7 +1,16 @@
 package framewise.dustview;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -10,13 +19,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.support.RequestContext;
 import org.springframework.web.servlet.view.JstlView;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * This class is support to rendering with dust.js on server-side.
@@ -86,7 +90,7 @@ public class SimpleDustTemplateView extends JstlView {
     /**
      * Resolve template file path by using JSP View url
      */
-    private Map<String, String> urlToViewPathCache = new HashMap<String, String>();
+//    private Map<String, String> urlToViewPathCache = new HashMap<String, String>();
 
     /**
      * Default Constructor
@@ -246,16 +250,48 @@ public class SimpleDustTemplateView extends JstlView {
             throw new DustViewException(e);
         }
     }
+    
+    private final ReadWriteLock rwl = new ReentrantReadWriteLock();
 
     void loadResourceToScriptEngine(String templateKey, String viewPath, String templateSource) {
-        if (!compiled) {
-            //need compile html by dust.js
+    	
+    	rwl.readLock().lock();    	
+        
+        if (getDustEngine().isLoad(templateKey, templateSource)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Compile HTML to Dust Markup(" + templateKey + "): [Raw HTML Source] " + templateSource);
+                logger.debug("Not load to browser engine (because using compiled source cache!! (templateKey: " + templateKey + ")");
             }
-            templateSource = getDustEngine().compile(templateKey, templateSource);
+            
+        } else {
+
+            // Must release read lock before acquiring write lock
+            rwl.readLock().unlock();
+            rwl.writeLock().lock();
+            
+            try {
+                // Recheck state because another thread might have
+                // acquired write lock and changed state before we did.
+            	 if (! getDustEngine().isLoad(templateKey, templateSource)) {
+            		 
+            		 if (!compiled) {
+            			 //need compile html by dust.js
+            			 if (logger.isDebugEnabled()) {
+            				 logger.debug("Compile HTML to Dust Markup(" + templateKey + "): [Raw HTML Source] " + templateSource);
+            			 }
+            			 templateSource = getDustEngine().compile(templateKey, templateSource);
+            		 }
+            		 getDustEngine().load(templateKey, templateSource);
+            		 
+            	 }
+                // Downgrade by acquiring read lock before releasing write lock
+                rwl.readLock().lock();
+                
+              } finally {
+                rwl.writeLock().unlock(); // Unlock write, still hold read
+              }
         }
-        getDustEngine().load(templateKey, templateSource);
+        
+        rwl.readLock().unlock();
     }
 
     protected boolean isCaching(boolean isRefresh, String cacheKey) {
@@ -383,13 +419,13 @@ public class SimpleDustTemplateView extends JstlView {
             request.setAttribute(MULTI_LOAD_REQUEST, true);
 
             String url = getUrl();
-            if (urlToViewPathCache.containsKey(url)) {
-                return urlToViewPathCache.get(url);
-            } else {
+//            if (urlToViewPathCache.containsKey(url)) {
+//                return urlToViewPathCache.get(url);
+//            } else {
                 String viewFolderPath = new File(url).getParent();
-                urlToViewPathCache.put(url, viewFolderPath);
+//                urlToViewPathCache.put(url, viewFolderPath);
                 return viewFolderPath;
-            }
+//            }
         }
 
         throw new IllegalArgumentException("View file path must require! param name is " + VIEW_FILE_PATH);

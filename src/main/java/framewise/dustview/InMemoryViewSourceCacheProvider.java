@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class will refresh when send to specific parameter.
@@ -15,7 +16,7 @@ public class InMemoryViewSourceCacheProvider implements ViewSourceCacheProvider 
 
     private final Logger logger = LoggerFactory.getLogger(InMemoryViewSourceCacheProvider.class);
 
-    private Map<String, String> cache = new HashMap<String, String>();
+    private Map<String, String> cache = new ConcurrentHashMap<String, String>();
 
     public boolean isCached(String key) {
         return cache.containsKey(key);
