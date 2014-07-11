@@ -1,15 +1,19 @@
 package framewise.dustview;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Support server-side dust rendering Function. This class load by Rhino JavaScript Engine.
@@ -51,7 +55,7 @@ public class DustTemplateEngine {
     // value: -1 ~ 9
     private int optimizationLevel = DEFAULT_OPTIMIZATION_LEVEL;
 
-    private Map<String, String> compiledSourceCache = new HashMap<String, String>();
+    private Map<String, String> compiledSourceCache = new ConcurrentHashMap<String, String>();
     private String dustExtensionFilePath;
 
     /**
@@ -194,12 +198,7 @@ public class DustTemplateEngine {
      * @param compiledSource load target HTML Markup
      */
     public boolean load(String templateKey, String compiledSource) {
-        if (isLoad(templateKey, compiledSource)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Not load to browser engine (because using compiled source cache!! (templateKey: " + templateKey + ")");
-            }
-            return false;
-        }
+
 
         final Context context = Context.enter();
         try {
@@ -227,7 +226,7 @@ public class DustTemplateEngine {
         }
     }
 
-    protected boolean isLoad(String templateKey, String compiledSource) {
+    public boolean isLoad(String templateKey, String compiledSource) {
         if (compiledSourceCache.containsKey(templateKey) && compiledSourceCache.containsValue(compiledSource)) {
             return true;
         }
